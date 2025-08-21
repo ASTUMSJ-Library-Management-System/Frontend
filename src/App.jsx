@@ -1,16 +1,22 @@
-import { Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Home from "./pages/Home";
 import SignupForm from "./pages/SignupForm";
-// import Login from "./pages/Login";
+import LoginPage from "./pages/LoginPage";
 
-function App() {
+export default function App() {
   return (
-    <Routes>
-      <Route path="/" element={<Home />} />
-      <Route path="/signup" element={<SignupForm />} />
-      {/* <Route path="/login" element={<Login />} /> */}
-    </Routes>
+    <BrowserRouter>
+      <Routes>
+        {/* Home and Signup */}
+        <Route path="/" element={<Home />} />
+        <Route path="/signup" element={<SignupForm />} />
+
+        {/* Login route */}
+        <Route path="/login" element={<LoginPage />} />
+
+        {/* Redirect everything else */}
+        <Route path="*" element={<Navigate to="/login" replace />} />
+      </Routes>
+    </BrowserRouter>
   );
 }
-
-export default App;
