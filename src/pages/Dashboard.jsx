@@ -1,11 +1,13 @@
 import React from "react";
 import Sidebar from "../components/side-bar";
 
-const Home = () => {
+const Dashboard = () => {
   return (
     <div>
       <Sidebar />
+      <div className="items-center">Dashboard</div>
     </div>
   );
 };
-export default Home;
+
+export default Dashboard;

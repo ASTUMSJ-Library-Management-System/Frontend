@@ -27,24 +27,17 @@ export function RegisterForm({
         <CardHeader className="text-center">
           {/* Logo */}
           <div className="flex justify-center mb-2">
-            <div className="h-14 w-14 flex items-center justify-center rounded-full bg-green-600">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-7 w-7 text-white"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth="2"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M12 6.253v13m0-13C10.832 5.477 9.5 5 8 5s-2.832.477-4 1.253v13C5.168 18.477 6.5 18 8 18s2.832.477 4 1.253zm0-13C13.168 5.477 14.5 5 16 5s2.832.477 4 1.253v13C18.832 18.477 17.5 18 16 18s-2.832.477-4 1.253z"
-                />
-              </svg>
+            <div className="h-20 w-20 flex items-center justify-center rounded-full bg-green-600">
+              <img
+              src="/Frame.png"
+              className=""
+               
+              />
+             
+              
             </div>
           </div>
-          <CardTitle className="text-2xl font-bold">
+          <CardTitle className="text-[#006045] text-2xl font-bold">
             Join ASTUMSJ Library
           </CardTitle>
           <CardDescription className="text-green-700">
@@ -52,7 +45,8 @@ export function RegisterForm({
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form className="space-y-4">
+          <form className= "space-y-4">
+          <div className="text-[#008952B2]">
             <div className="grid gap-2">
               <Label htmlFor="name">Full Name</Label>
               <Input id="name" type="text" placeholder="Enter your full name" required />
@@ -72,19 +66,19 @@ export function RegisterForm({
             <Label htmlFor="department">Department</Label>
             <Select>
               <SelectTrigger
-      id="department"
-      className="bg-white border border-input rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
-    >
-      <SelectValue placeholder="Select your department" />
-    </SelectTrigger>
-    <SelectContent className="bg-white">
-      <SelectItem value="engineering">Engineering</SelectItem>
-      <SelectItem value="science">Science</SelectItem>
-      <SelectItem value="business">Business</SelectItem>
-      <SelectItem value="arts">Arts</SelectItem>
-    </SelectContent>
-  </Select>
-</div>
+              id="department"
+              className="bg-white border border-input rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
+              >
+                <SelectValue placeholder="Select your department" />
+              </SelectTrigger>
+              <SelectContent className="bg-white">
+                <SelectItem value="engineering">Engineering</SelectItem>
+                <SelectItem value="science">Science</SelectItem>
+                <SelectItem value="business">Business</SelectItem>
+                <SelectItem value="arts">Arts</SelectItem>
+              </SelectContent>
+            </Select>
+           </div>
 
 
             <div className="grid gap-2">
@@ -96,6 +90,7 @@ export function RegisterForm({
               <Label htmlFor="confirmPassword">Confirm Password</Label>
               <Input id="confirmPassword" type="password" placeholder="Confirm your password" required />
             </div>
+          </div>
 
             <Button type="submit" className="w-full bg-green-600 hover:bg-green-700">
               Sign In
