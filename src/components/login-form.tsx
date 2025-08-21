@@ -68,20 +68,24 @@ export function RegisterForm({
               <Input id="studentId" type="text" placeholder="Enter your Student ID" required />
             </div>
 
-            <div className="grid gap-2">
-              <Label htmlFor="department">Department</Label>
-              <Select>
-                <SelectTrigger id="department">
-                  <SelectValue placeholder="Select your department" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="engineering">Engineering</SelectItem>
-                  <SelectItem value="science">Science</SelectItem>
-                  <SelectItem value="business">Business</SelectItem>
-                  <SelectItem value="arts">Arts</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+           <div className="grid gap-2">
+            <Label htmlFor="department">Department</Label>
+            <Select>
+              <SelectTrigger
+      id="department"
+      className="bg-white border border-input rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
+    >
+      <SelectValue placeholder="Select your department" />
+    </SelectTrigger>
+    <SelectContent className="bg-white">
+      <SelectItem value="engineering">Engineering</SelectItem>
+      <SelectItem value="science">Science</SelectItem>
+      <SelectItem value="business">Business</SelectItem>
+      <SelectItem value="arts">Arts</SelectItem>
+    </SelectContent>
+  </Select>
+</div>
+
 
             <div className="grid gap-2">
               <Label htmlFor="password">Password</Label>
