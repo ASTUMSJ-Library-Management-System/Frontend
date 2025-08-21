@@ -7,75 +7,80 @@ import {
   LogOut,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { Link } from "react-router-dom";
 
 export default function Sidebar() {
   return (
-    <div className="h-screen w-64 bg-green-50 border-r flex flex-col justify-between p-4">
-      {/* Logo */}
-      <div>
-        <div className="flex items-center gap-2 mb-6">
-          <div className="h-10 w-10 flex items-center justify-center rounded-full bg-green-600">
-            <BookOpen className="text-white h-6 w-6" />
-          </div>
-          <span className="font-semibold text-green-800">ASTUMSJ Library</span>
+    <div className="h-screen w-64 bg-[#FFFFFF] border-r flex flex-col justify-between p-4">
+      <div className="bg-[#FFFFFF]">
+        {/* Sidebar Top */}
+        <div className="flex items-center gap-3 mb-2 shadow-[10px_1px_60px_0px_#1D77571A]">
+         <div className="h-10 w-10 flex items-center justify-center rounded-lg bg-green-600 shadow-sm">
+         <BookOpen className="text-white h-6 w-6" />
+         </div>
+
+         {/* Title + Subtitle */}
+         <div className="flex flex-col leading-tight">
+          <span className="font-semibold text-[#006045] text-sm">ASTUMSJ Library</span>
+          <span className="text-xs text-[#189966]">Student Panel</span>
+         </div>
         </div>
+       <div className="h-[0.5px] w-full bg-[#5DDBA9]"></div>
 
         {/* Menu */}
         <nav className="flex flex-col gap-2 text-sm font-medium text-gray-700">
-          <a
-            href="#"
+          <Link
+            to="/Dashboard"
             className="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-green-100"
           >
             <Home className="h-4 w-4 text-green-700" />
             Dashboard
-          </a>
+          </Link>
 
-          <a
-            href="#"
-            className="flex items-center gap-2 px-3 py-2 rounded-md bg-green-600 text-white hover:bg-green-700"
+          <Link
+            to="/Borrowbook"
+            className="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-green-100"
           >
             <BookOpen className="h-4 w-4" />
             Borrow Books
-          </a>
+          </Link>
 
-          <a
-            href="#"
+          <Link
+            to="/MyBooks"
             className="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-green-100"
           >
             <Wallet className="h-4 w-4 text-green-700" />
             My Books
-          </a>
+          </Link>
 
-          <a
-            href="#"
+          <Link
+            to="/MembershipPayment"
             className="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-green-100"
           >
             <CreditCard className="h-4 w-4 text-green-700" />
             Membership Payment
-          </a>
+          </Link>
 
-          <a
-            href="#"
+          <Link
+            to="/Profile"
             className="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-green-100"
           >
             <User className="h-4 w-4 text-green-700" />
             Profile
-          </a>
+          </Link>
         </nav>
       </div>
 
-      {/* Bottom info */}
+      
       <div>
-        <div className="mb-4 text-xs text-gray-700 space-y-1">
+        <div className="flex flex-col items-start gap-1 p-3 rounded-md border border-green-200 bg-[#ECFDF5] text-sm w-full mb-4">
+          <p className="font-semibold text-green-700">Student User</p>
+          <p className="text-gray-700">temkin@astu.edu.et</p>
           <p>
-            <span className="font-semibold text-green-700">Student User</span>
-          </p>
-          <p>ID: <span className="text-gray-900">ASTU12345</span></p>
-          <p>
-            Payment:{" "}
-            <span className="text-yellow-600 font-medium">Pending</span>
+            Payment: <span className="text-yellow-600 font-medium">pending</span>
           </p>
         </div>
+
 
         <Button
           variant="outline"

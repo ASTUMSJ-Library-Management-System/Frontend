@@ -1,11 +1,13 @@
 import React from "react";
 import Sidebar from "../components/side-bar";
 
-const Home = () => {
+const MembershipPayment = () => {
   return (
     <div>
       <Sidebar />
+      <div className="items-center">MembershipPayment</div>
     </div>
   );
 };
-export default Home;
+
+export default MembershipPayment;
