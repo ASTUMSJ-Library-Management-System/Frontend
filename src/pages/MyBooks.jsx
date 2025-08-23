@@ -1,5 +1,5 @@
 import React from "react";
-import Sidebar from "../components/side-bar.jsx";
+import Sidebar from "../components/Side-bar.jsx";
 
 const MyBooks = () => {
   return (

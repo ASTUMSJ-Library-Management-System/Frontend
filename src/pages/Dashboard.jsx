@@ -1,5 +1,5 @@
 import React from "react";
-import Sidebar from "../components/side-bar";
+import Sidebar from "../components/Side-bar";
 import { BookOpen, Library, CreditCard, User } from "lucide-react";
 
 const Dashboard = () => {
