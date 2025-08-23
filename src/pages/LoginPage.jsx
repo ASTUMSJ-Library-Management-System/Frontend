@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
+import { motion as Motion } from "framer-motion";
 import { BookOpen } from "lucide-react";
 
 import {
@@ -27,18 +27,24 @@ export default function LoginPage() {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-[#ECFDF5] px-4">
-      <motion.div
+      {/* Animate the card */}
+      <Motion.div
         initial={{ opacity: 0, y: 40 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6 }}
+        transition={{ duration: 0.6, ease: "easeOut" }}
         className="w-full max-w-md"
       >
         <Card className="rounded-2xl shadow-lg border border-[#009966]/20 bg-white">
           {/* Header */}
           <CardHeader className="text-center space-y-3">
-            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-[#009966] shadow">
+            <Motion.div
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ duration: 0.5, type: "spring" }}
+              className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-[#009966] shadow"
+            >
               <BookOpen className="h-7 w-7 text-white" />
-            </div>
+            </Motion.div>
             <CardTitle className="text-2xl font-bold text-[#009966]">
               Sign In
             </CardTitle>
@@ -82,13 +88,18 @@ export default function LoginPage() {
                 />
               </div>
 
-              {/* Submit */}
-              <Button
-                type="submit"
-                className="w-full bg-[#009966] hover:bg-[#007a52] text-white rounded-md py-2"
+              {/* Submit Button with hover animation */}
+              <Motion.div
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
               >
-                Sign In
-              </Button>
+                <Button
+                  type="submit"
+                  className="w-full bg-[#009966] hover:bg-[#007a52] text-white rounded-md py-2"
+                >
+                  Sign In
+                </Button>
+              </Motion.div>
             </form>
 
             {/* Footer link */}
@@ -115,7 +126,7 @@ export default function LoginPage() {
             </div>
           </CardFooter>
         </Card>
-      </motion.div>
+      </Motion.div>
     </div>
   );
 }

@@ -1,8 +1,11 @@
 import React from "react";
 import Sidebar from "../components/Side-bar";
 import { BookOpen, Library, CreditCard, User } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 const Dashboard = () => {
+  const navigate = useNavigate();
+
   return (
     <div className="flex">
       <Sidebar />
@@ -19,6 +22,7 @@ const Dashboard = () => {
           approval.
         </div>
 
+        {/* Stats Section */}
         <div className="grid grid-cols-3 gap-4 mt-6">
           <div className="bg-white p-4 rounded-lg shadow-md">
             <p className="text-gray-500">Books Borrowed</p>
@@ -54,6 +58,7 @@ const Dashboard = () => {
               <span className="text-sm text-gray-600">Due: 12/15/2025</span>
             </div>
           </div>
+
           <div>
             <p className="font-medium">Tafsir Ibn Kathir - Vol 1</p>
             <p className="text-sm text-gray-600">by Ibn Kathir</p>
@@ -67,30 +72,51 @@ const Dashboard = () => {
           </div>
         </div>
 
+        {/* Quick Actions Section */}
         <div className="grid grid-cols-4 gap-4 mt-6">
-          <div className="bg-white p-4 rounded-lg shadow-md text-center hover:bg-[#F3FFF9] transition">
-            <BookOpen className="w-8 h-8 text-[#009966] mx-auto mb-2" />
-            <p className="font-medium text-[#009966]">Browse Books</p>
-            <p className="text-sm text-gray-600">Find your next read</p>
-          </div>
+          <button
+            onClick={() => navigate("/borrowbook")}
+            className="group bg-white p-4 rounded-lg shadow-md text-center 
+                       hover:bg-[#009966] hover:text-white transition 
+                       transform hover:scale-105 cursor-pointer"
+          >
+            <BookOpen className="w-8 h-8 text-[#009966] mx-auto mb-2 group-hover:text-white" />
+            <p className="font-medium">Browse Books</p>
+            <p className="text-sm">Find your next read</p>
+          </button>
 
-          <div className="bg-white p-4 rounded-lg shadow-md text-center hover:bg-[#F3FFF9] transition">
-            <Library className="w-8 h-8 text-[#009966] mx-auto mb-2" />
-            <p className="font-medium text-[#009966]">My Books</p>
-            <p className="text-sm text-gray-600">Manage borrowed books</p>
-          </div>
+          <button
+            onClick={() => navigate("/mybooks")}
+            className="group bg-white p-4 rounded-lg shadow-md text-center 
+                       hover:bg-[#009966] hover:text-white transition 
+                       transform hover:scale-105 cursor-pointer"
+          >
+            <Library className="w-8 h-8 text-[#009966] mx-auto mb-2 group-hover:text-white" />
+            <p className="font-medium">My Books</p>
+            <p className="text-sm">Manage borrowed books</p>
+          </button>
 
-          <div className="bg-white p-4 rounded-lg shadow-md text-center hover:bg-[#F3FFF9] transition">
-            <CreditCard className="w-8 h-8 text-[#009966] mx-auto mb-2" />
-            <p className="font-medium text-[#009966]">Payment</p>
-            <p className="text-sm text-gray-600">Manage membership</p>
-          </div>
+          <button
+            onClick={() => navigate("/membershippayment")}
+            className="group bg-white p-4 rounded-lg shadow-md text-center 
+                       hover:bg-[#009966] hover:text-white transition 
+                       transform hover:scale-105 cursor-pointer"
+          >
+            <CreditCard className="w-8 h-8 text-[#009966] mx-auto mb-2 group-hover:text-white" />
+            <p className="font-medium">Payment</p>
+            <p className="text-sm">Manage membership</p>
+          </button>
 
-          <div className="bg-white p-4 rounded-lg shadow-md text-center hover:bg-[#F3FFF9] transition">
-            <User className="w-8 h-8 text-[#009966] mx-auto mb-2" />
-            <p className="font-medium text-[#009966]">Profile</p>
-            <p className="text-sm text-gray-600">Update your profile</p>
-          </div>
+          <button
+            onClick={() => navigate("/profile")}
+            className="group bg-white p-4 rounded-lg shadow-md text-center 
+                       hover:bg-[#009966] hover:text-white transition 
+                       transform hover:scale-105 cursor-pointer"
+          >
+            <User className="w-8 h-8 text-[#009966] mx-auto mb-2 group-hover:text-white" />
+            <p className="font-medium">Profile</p>
+            <p className="text-sm">Update your profile</p>
+          </button>
         </div>
       </div>
     </div>

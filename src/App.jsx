@@ -1,5 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import Home from "./pages/Home";
+import { Routes, Route, Navigate } from "react-router-dom";
 import MembershipPayment from "./pages/MembershipPayment";
 import MyBooks from "./pages/MyBooks";
 import Profile from "./pages/Profile";
@@ -10,23 +9,23 @@ import LoginPage from "./pages/LoginPage";
 
 export default function App() {
   return (
-    <BrowserRouter>
-      <Routes>
-        {/* Public routes */}
-        <Route path="/" element={<Home />} />
-        <Route path="/signup" element={<SignupForm />} />
-        <Route path="/login" element={<LoginPage />} />
+    <Routes>
+      {/* Default route → Login Page */}
+      <Route path="/" element={<Navigate to="/login" replace />} />
 
-        {/* Member routes */}
-        <Route path="/MembershipPayment" element={<MembershipPayment />} />
-        <Route path="/MyBooks" element={<MyBooks />} />
-        <Route path="/Profile" element={<Profile />} />
-        <Route path="/Borrowbook" element={<Borrowbook />} />
-        <Route path="/Dashboard" element={<Dashboard />} />
+      {/* Public routes */}
+      <Route path="/signup" element={<SignupForm />} />
+      <Route path="/login" element={<LoginPage />} />
 
-        {/* Redirect unknown routes to login */}
-        <Route path="*" element={<Navigate to="/login" replace />} />
-      </Routes>
-    </BrowserRouter>
+      {/* Member routes */}
+      <Route path="/membership-payment" element={<MembershipPayment />} />
+      <Route path="/my-books" element={<MyBooks />} />
+      <Route path="/profile" element={<Profile />} />
+      <Route path="/borrowbook" element={<Borrowbook />} />
+      <Route path="/dashboard" element={<Dashboard />} />
+
+      {/* Catch-all → redirect to login */}
+      <Route path="*" element={<Navigate to="/login" replace />} />
+    </Routes>
   );
 }
