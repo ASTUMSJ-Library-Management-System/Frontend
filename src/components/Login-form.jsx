@@ -72,10 +72,13 @@ export function RegisterForm({ className, ...props }) {
               <div className="grid gap-2">
                 <Label htmlFor="department">Department</Label>
                 <Select>
-                  <SelectTrigger id="department">
+                  <SelectTrigger
+                    id="department"
+                    className="bg-white border border-input rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
+                  >
                     <SelectValue placeholder="Select your department" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="bg-white mt-12 ">
                     <SelectItem value="engineering">Engineering</SelectItem>
                     <SelectItem value="science">Science</SelectItem>
                     <SelectItem value="business">Business</SelectItem>
