@@ -23,9 +23,6 @@ export default function App() {
       <Route path="/profile" element={<Profile />} />
       <Route path="/borrowbook" element={<Borrowbook />} />
       <Route path="/dashboard" element={<Dashboard />} />
-
-      {/* Catch-all → redirect to login */}
-      <Route path="*" element={<Navigate to="/login" replace />} />
     </Routes>
   );
 }

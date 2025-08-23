@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom"; // ✅ add Link
 import { motion as Motion } from "framer-motion";
 import { BookOpen } from "lucide-react";
 
@@ -89,10 +89,7 @@ export default function LoginPage() {
               </div>
 
               {/* Submit Button with hover animation */}
-              <Motion.div
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-              >
+              <Motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
                 <Button
                   type="submit"
                   className="w-full bg-[#009966] hover:bg-[#007a52] text-white rounded-md py-2"
@@ -105,12 +102,12 @@ export default function LoginPage() {
             {/* Footer link */}
             <p className="mt-4 text-center text-sm text-gray-600">
               Don’t have an account?{" "}
-              <a
-                href="/register"
+              <Link
+                to="/signup" // ✅ correct route
                 className="text-[#009966] font-semibold hover:underline"
               >
                 Register here
-              </a>
+              </Link>
             </p>
           </CardContent>
 
