@@ -1,4 +1,11 @@
-import { Home, BookOpen, Library, CreditCard, User, LogOut } from "lucide-react";
+import {
+  Home,
+  BookOpen,
+  Library,
+  CreditCard,
+  User,
+  LogOut,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 
@@ -6,13 +13,11 @@ export default function Sidebar() {
   return (
     <div className="h-screen w-64 bg-[#FFFFFF] border-r flex flex-col justify-between p-4">
       <div>
-        {/* Sidebar Top */}
         <div className="flex items-center gap-3 mb-2 shadow-[10px_1px_60px_0px_#1D77571A]">
           <div className="h-10 w-10 flex items-center justify-center rounded-lg bg-green-600 shadow-sm">
             <BookOpen className="text-white h-6 w-6" />
           </div>
 
-          {/* Title + Subtitle */}
           <div className="flex flex-col leading-tight">
             <span className="font-semibold text-[#006045] text-sm">
               ASTUMSJ Library
@@ -22,7 +27,6 @@ export default function Sidebar() {
         </div>
         <div className="h-[0.5px] w-full bg-[#5DDBA9]"></div>
 
-        {/* Menu */}
         <nav className="flex flex-col gap-2 text-sm font-medium text-gray-700 mt-2">
           <Link
             to="/Dashboard"
