@@ -1,1 +1,18 @@
 @import "tailwindcss";
+
+/* Basic CSS for Select component */
+[data-radix-select-content] {
+  z-index: 9999;
+}
+
+[data-radix-select-trigger] {
+  cursor: pointer;
+}
+
+[data-radix-select-item] {
+  cursor: pointer;
+}
+
+[data-radix-select-item]:hover {
+  background-color: #f0fdf4;
+}

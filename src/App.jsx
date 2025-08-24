@@ -6,6 +6,8 @@ import Borrowbook from "./pages/Borrowbook";
 import Dashboard from "./pages/Dashboard";
 import SignupForm from "./pages/SignupForm";
 import LoginPage from "./pages/LoginPage";
+import NotFound from "./pages/NotFound";
+import ProtectedRoute from "./components/ProtectedRoute";
 
 export default function App() {
   return (
@@ -17,12 +19,37 @@ export default function App() {
       <Route path="/signup" element={<SignupForm />} />
       <Route path="/login" element={<LoginPage />} />
 
-      {/* Member routes */}
-      <Route path="/membership-payment" element={<MembershipPayment />} />
-      <Route path="/my-books" element={<MyBooks />} />
-      <Route path="/profile" element={<Profile />} />
-      <Route path="/borrowbook" element={<Borrowbook />} />
-      <Route path="/dashboard" element={<Dashboard />} />
+      {/* Protected routes */}
+      <Route path="/membership-payment" element={
+        <ProtectedRoute>
+          <MembershipPayment />
+        </ProtectedRoute>
+      } />
+      <Route path="/my-books" element={
+        <ProtectedRoute>
+          <MyBooks />
+        </ProtectedRoute>
+      } />
+      <Route path="/profile" element={
+        <ProtectedRoute>
+          <Profile />
+        </ProtectedRoute>
+      } />
+      <Route path="/borrowbook" element={
+        <ProtectedRoute>
+          <Borrowbook />
+        </ProtectedRoute>
+      } />
+      
+      {/* Dashboard - accessible to all registered users */}
+      <Route path="/dashboard" element={
+        <ProtectedRoute>
+          <Dashboard />
+        </ProtectedRoute>
+      } />
+
+      {/* 404 Not Found - must be last */}
+      <Route path="*" element={<NotFound />} />
     </Routes>
   );
 }
