@@ -20,28 +20,35 @@ import {
 
 export function RegisterForm({ className, ...props }) {
   return (
-    <div className={cn("flex flex-col gap-6", className)} {...props}>
-      <Card>
+    <div
+      className={`flex flex-col gap-6 w-full max-w-md mx-auto min-h-[400px] ${
+        className || ""
+      }`}
+      {...props}
+    >
+      <Card className="w-full rounded-2xl shadow-lg border border-[#009966]/20 bg-white">
         <CardHeader className="text-center">
-          {/* Logo */}
-          <div className="flex justify-center mb-2">
-            <div className="h-20 w-20 flex items-center justify-center rounded-full bg-green-600">
+          <div className="flex justify-center ">
+            <div className="h-20 w-40 flex items-center justify-center">
               <img src="/Frame.png" alt="Logo" />
             </div>
           </div>
           <CardTitle className="text-[#006045] text-2xl font-bold">
             Join ASTUMSJ Library
           </CardTitle>
-          <CardDescription className="text-green-700">
+          <CardDescription className="text-[#189966] mt-2">
             Create your student account to access library services
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form className="space-y-4">
-            <div className="text-[#008952B2] space-y-4">
-              <div className="grid gap-2">
-                <Label htmlFor="name">Full Name</Label>
+            <div className="  space-y-4">
+              <div className="grid border-[#A4F4CF] gap-2">
+                <Label className="text-[#008952B2] font-bold" htmlFor="name">
+                  Full Name
+                </Label>
                 <Input
+                  className="border-[#A4F4CF] focus:ring-2 focus:ring-green-500"
                   id="name"
                   type="text"
                   placeholder="Enter your full name"
@@ -50,8 +57,11 @@ export function RegisterForm({ className, ...props }) {
               </div>
 
               <div className="grid gap-2">
-                <Label htmlFor="email">Email</Label>
+                <Label className="text-[#008952B2] font-bold" htmlFor="email">
+                  Email
+                </Label>
                 <Input
+                  className="border-[#A4F4CF] focus:ring-2 focus:ring-green-500"
                   id="email"
                   type="email"
                   placeholder="Enter your email"
@@ -60,25 +70,41 @@ export function RegisterForm({ className, ...props }) {
               </div>
 
               <div className="grid gap-2">
-                <Label htmlFor="studentId">Student ID</Label>
+                <Label
+                  className="text-[#008952B2] font-bold"
+                  htmlFor="studentId"
+                >
+                  Student ID
+                </Label>
                 <Input
+                  className="border-[#A4F4CF] focus:ring-2 focus:ring-green-500"
                   id="studentId"
                   type="text"
                   placeholder="Enter your Student ID"
                   required
                 />
               </div>
-
-              <div className="grid gap-2">
-                <Label htmlFor="department">Department</Label>
+              <div className="grid gap-2 relative">
+                <Label
+                  className="text-[#008952B2] font-bold"
+                  htmlFor="department"
+                >
+                  Department
+                </Label>
                 <Select>
                   <SelectTrigger
                     id="department"
-                    className="bg-white border border-input rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
+                    className="bg-white border border-[#A4F4CF] rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
                   >
-                    <SelectValue placeholder="Select your department" />
+                    <SelectValue
+                      type="text"
+                      placeholder="Select your department"
+                    />
                   </SelectTrigger>
-                  <SelectContent className="bg-white mt-12 ">
+                  <SelectContent
+                    position="popper"
+                    className="bg-white border-[#A4F4CF] "
+                  >
                     <SelectItem value="engineering">Engineering</SelectItem>
                     <SelectItem value="science">Science</SelectItem>
                     <SelectItem value="business">Business</SelectItem>
@@ -88,8 +114,14 @@ export function RegisterForm({ className, ...props }) {
               </div>
 
               <div className="grid gap-2">
-                <Label htmlFor="password">Password</Label>
+                <Label
+                  className="text-[#008952B2] font-bold"
+                  htmlFor="password"
+                >
+                  Password
+                </Label>
                 <Input
+                  className="border-[#A4F4CF] focus:ring-2 focus:ring-green-500"
                   id="password"
                   type="password"
                   placeholder="Create Password"
@@ -98,8 +130,14 @@ export function RegisterForm({ className, ...props }) {
               </div>
 
               <div className="grid gap-2">
-                <Label htmlFor="confirmPassword">Confirm Password</Label>
+                <Label
+                  className="text-[#008952B2] font-bold"
+                  htmlFor="confirmPassword"
+                >
+                  Confirm Password
+                </Label>
                 <Input
+                  className="border-[#A4F4CF] focus:ring-2 focus:ring-green-500"
                   id="confirmPassword"
                   type="password"
                   placeholder="Confirm your password"
@@ -110,17 +148,14 @@ export function RegisterForm({ className, ...props }) {
 
             <Button
               type="submit"
-              className="w-full bg-green-600 hover:bg-green-700"
+              className="w-full h-150%  bg-[#009966] text-[#FFFFFF] font-bold text-[15px] hover:bg-[#22b67b] rounded-md"
             >
               Sign In
             </Button>
 
-            <div className="text-center text-sm mt-2">
+            <div className="text-center text-[#189966] text-sm ">
               Don’t have an account?{" "}
-              <a
-                href="#"
-                className="text-green-700 font-semibold hover:underline"
-              >
+              <a href="#" className="text-[#189966] font-bold hover:underline">
                 Register here
               </a>
             </div>

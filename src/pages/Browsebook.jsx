@@ -1,13 +1,13 @@
 import React from "react";
 import Sidebar from "../components/Side-bar.jsx";
 
-const Borrowbook = () => {
+const Browsebook = () => {
   return (
     <div>
       <Sidebar />
-      <div className="items-center">Borrowbook</div>
+      <div className="items-center">Browsebook</div>
     </div>
   );
 };
 
-export default Borrowbook;
+export default Browsebook;
