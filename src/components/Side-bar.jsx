@@ -1,4 +1,7 @@
+import React from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
+  X,
   Home,
   BookOpen,
   Library,
@@ -6,11 +9,33 @@ import {
   User,
   LogOut,
 } from "lucide-react";
-import { Button } from "@/components/ui/Button";
-import { Link, useNavigate } from "react-router-dom";
+import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 
-export default function Sidebar() {
+/** Single nav row */
+function SideNavLink({ to, icon: IconComp, label, onClick }) {
+  const { pathname } = useLocation();
+  const active = pathname.toLowerCase() === to.toLowerCase();
+
+  return (
+    <Link
+      to={to}
+      onClick={onClick}
+      className={`flex items-center gap-2 px-3 py-2 rounded-md transition ${
+        active ? "bg-[#009966] text-white" : "text-gray-700 hover:bg-green-100"
+      }`}
+    >
+      {IconComp && (
+        <IconComp
+          className={`h-4 w-4 ${active ? "text-white" : "text-[#009966]"}`}
+        />
+      )}
+      <span className="text-sm font-medium">{label}</span>
+    </Link>
+  );
+}
+
+export default function Sidebar({ isOpen = false, onClose = () => {} }) {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
 
@@ -19,70 +44,45 @@ export default function Sidebar() {
     navigate("/login");
   };
 
-  return (
-    <div className="h-screen w-64 bg-[#FFFFFF] border-r flex flex-col justify-between p-4">
+  const links = [
+    { to: "/dashboard", label: "Dashboard", icon: Home },
+    { to: "/browsebooks", label: "Browse Books", icon: BookOpen },
+    { to: "/mybooks", label: "My Books", icon: Library },
+    { to: "/membershippayment", label: "Membership Payment", icon: CreditCard },
+    { to: "/profile", label: "Profile", icon: User },
+  ];
+
+  const SidebarBody = ({ onItemClick }) => (
+    <div className="h-full w-64 bg-white border-r flex flex-col justify-between p-4">
+      {/* Brand */}
       <div>
-        <div className="flex items-center gap-3 mb-2 shadow-[10px_1px_60px_0px_#1D77571A]">
-          <div className="h-10 w-10 flex items-center justify-center rounded-lg bg-green-600 shadow-sm">
+        <div className="flex items-center gap-3 mb-3 shadow-[0_1px_20px_0_#1D77571A] rounded-lg p-2">
+          <div className="h-10 w-10 flex items-center justify-center rounded-lg bg-[#009966] shadow-sm">
             <BookOpen className="text-white h-6 w-6" />
           </div>
-
-          <div className="flex flex-col leading-tight">
-            <span className="font-semibold text-[#006045] text-sm">
+          <div className="leading-tight">
+            <div className="font-semibold text-[#006045] text-sm">
               ASTUMSJ Library
-            </span>
-            <span className="text-xs text-[#189966]">
+            </div>
+            <div className="text-xs text-[#189966]">
               {user?.role === "admin" ? "Admin Panel" : "Student Panel"}
-            </span>
+            </div>
           </div>
         </div>
-        <div className="h-[0.5px] w-full bg-[#5DDBA9]"></div>
 
-        <nav className="flex flex-col gap-2 text-sm font-medium text-gray-700 mt-2">
-          <Link
-            to="/dashboard"
-            className="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-green-100"
-          >
-            <Home className="h-4 w-4 text-green-700" />
-            Dashboard
-          </Link>
+        <div className="h-[1px] w-full bg-[#5DDBA9]" />
 
-          <Link
-            to="/borrowbook"
-            className="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-green-100"
-          >
-            <BookOpen className="h-4 w-4" />
-            Borrow Books
-          </Link>
-
-          <Link
-            to="/my-books"
-            className="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-green-100"
-          >
-            <Library className="h-4 w-4 text-green-700" />
-            My Books
-          </Link>
-
-          <Link
-            to="/membership-payment"
-            className="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-green-100"
-          >
-            <CreditCard className="h-4 w-4 text-green-700" />
-            Membership Payment
-          </Link>
-
-          <Link
-            to="/profile"
-            className="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-green-100"
-          >
-            <User className="h-4 w-4 text-green-700" />
-            Profile
-          </Link>
+        {/* Nav */}
+        <nav className="flex flex-col gap-2 mt-3">
+          {links.map((l) => (
+            <SideNavLink key={l.to} {...l} onClick={onItemClick} />
+          ))}
         </nav>
       </div>
 
+      {/* Footer card + signout */}
       <div>
-        <div className="flex flex-col items-start gap-1 p-3 rounded-md border border-green-200 bg-[#ECFDF5] text-sm w-full mb-4">
+        <div className="flex flex-col gap-1 p-3 rounded-md border border-green-200 bg-[#ECFDF5] text-sm mb-3">
           <p className="font-semibold text-green-700">{user?.name || "User"}</p>
           <p className="text-gray-700">{user?.email || "user@example.com"}</p>
           <p>
@@ -92,7 +92,6 @@ export default function Sidebar() {
             </span>
           </p>
         </div>
-
         <Button
           onClick={handleLogout}
           variant="outline"
@@ -103,5 +102,31 @@ export default function Sidebar() {
         </Button>
       </div>
     </div>
+  );
+
+  return (
+    <>
+      <div className="hidden md:block fixed left-0 top-0 h-screen w-64">
+        <SidebarBody />
+      </div>
+
+      {isOpen && (
+        <div className="md:hidden fixed inset-0 z-50">
+          <div className="absolute inset-0 bg-black/40" onClick={onClose} />
+          <div className="relative h-full">
+            <button
+              className="absolute top-3 right-3 z-50 p-2 bg-white/90 rounded-md shadow"
+              onClick={onClose}
+              aria-label="Close menu"
+            >
+              <X className="w-5 h-5 text-gray-700" />
+            </button>
+            <div className="h-full w-64 bg-white shadow-lg">
+              <SidebarBody onItemClick={onClose} />
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }

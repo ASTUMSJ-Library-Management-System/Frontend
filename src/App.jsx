@@ -2,7 +2,7 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import MembershipPayment from "./pages/MembershipPayment";
 import MyBooks from "./pages/MyBooks";
 import Profile from "./pages/Profile";
-import Borrowbook from "./pages/Borrowbook";
+import BrowseBooks from "./pages/BrowseBooks";
 import Dashboard from "./pages/Dashboard";
 import SignupForm from "./pages/SignupForm";
 import LoginPage from "./pages/LoginPage";
@@ -20,12 +20,12 @@ export default function App() {
       <Route path="/login" element={<LoginPage />} />
 
       {/* Protected routes */}
-      <Route path="/membership-payment" element={
+      <Route path="/membershippayment" element={
         <ProtectedRoute>
           <MembershipPayment />
         </ProtectedRoute>
       } />
-      <Route path="/my-books" element={
+      <Route path="/mybooks" element={
         <ProtectedRoute>
           <MyBooks />
         </ProtectedRoute>
@@ -35,9 +35,9 @@ export default function App() {
           <Profile />
         </ProtectedRoute>
       } />
-      <Route path="/borrowbook" element={
+      <Route path="/browsebooks" element={
         <ProtectedRoute>
-          <Borrowbook />
+          <BrowseBooks />
         </ProtectedRoute>
       } />
       
