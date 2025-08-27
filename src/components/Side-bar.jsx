@@ -58,7 +58,7 @@ export default function Sidebar({ isOpen = false, onClose = () => {} }) {
     { to: "/managebooks", label: "Manage Books", icon: BookOpen },
     { to: "/manageusers", label: "Manage Users", icon: User },
     { to: "/paymentrequests", label: "Payment Requests", icon: CreditCard },
-    { to: "/borrowingrecords", label: "Borrowing Records", icon: Library },
+    { to: "/borrowingrecord", label: "Borrowing Record", icon: Library },
   ];
 
   const links = user?.role === "admin" ? adminLinks : studentLinks;

@@ -1,4 +1,5 @@
 import { Routes, Route, Navigate } from "react-router-dom";
+
 import MembershipPayment from "./pages/MembershipPayment";
 import MyBooks from "./pages/MyBooks";
 import Profile from "./pages/Profile";
@@ -12,18 +13,19 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import ManageBooks from "./adminpages/ManageBooks";
 import ManageUsers from "./adminpages/ManageUsers";
 import PaymentRequests from "./adminpages/PaymentRequests";
-import BorrowingRecords from "./adminpages/BorrowingRecords";
+import BorrowingRecord from "./adminpages/BorrowingRecord";
 
 export default function App() {
   return (
     <Routes>
+      {/* Default → login */}
       <Route path="/" element={<Navigate to="/login" replace />} />
 
       {/* Public routes */}
       <Route path="/signup" element={<SignupForm />} />
       <Route path="/login" element={<LoginPage />} />
 
-      {/* Student-only routes */}
+      {/* ================= Student Routes ================= */}
       <Route
         path="/dashboard"
         element={
@@ -32,12 +34,10 @@ export default function App() {
           </ProtectedRoute>
         }
       />
-
-      {/* Student-only protected pages */}
       <Route
         path="/membershippayment"
         element={
-          <ProtectedRoute>
+          <ProtectedRoute requireAdmin={false}>
             <MembershipPayment />
           </ProtectedRoute>
         }
@@ -45,7 +45,7 @@ export default function App() {
       <Route
         path="/mybooks"
         element={
-          <ProtectedRoute>
+          <ProtectedRoute requireAdmin={false}>
             <MyBooks />
           </ProtectedRoute>
         }
@@ -53,7 +53,7 @@ export default function App() {
       <Route
         path="/profile"
         element={
-          <ProtectedRoute>
+          <ProtectedRoute requireAdmin={false}>
             <Profile />
           </ProtectedRoute>
         }
@@ -61,27 +61,26 @@ export default function App() {
       <Route
         path="/browsebooks"
         element={
-          <ProtectedRoute>
+          <ProtectedRoute requireAdmin={false}>
             <BrowseBooks />
           </ProtectedRoute>
         }
       />
 
-      {/* Admin-only routes */}
-      <Route
-        path="/managebooks"
-        element={
-          <ProtectedRoute requireAdmin={true}>
-            <ManageBooks />
-          </ProtectedRoute>
-        }
-      />
-      {/* Admin dashboard */}
+      {/* ================= Admin Routes ================= */}
       <Route
         path="/admin/dashboard"
         element={
           <ProtectedRoute requireAdmin={true}>
             <Dashboard type="admin" />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/managebooks"
+        element={
+          <ProtectedRoute requireAdmin={true}>
+            <ManageBooks />
           </ProtectedRoute>
         }
       />
@@ -102,10 +101,10 @@ export default function App() {
         }
       />
       <Route
-        path="/borrowingrecords"
+        path="/borrowingrecord"
         element={
           <ProtectedRoute requireAdmin={true}>
-            <BorrowingRecords />
+            <BorrowingRecord />
           </ProtectedRoute>
         }
       />
