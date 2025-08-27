@@ -23,6 +23,17 @@ export default function App() {
       <Route path="/signup" element={<SignupForm />} />
       <Route path="/login" element={<LoginPage />} />
 
+      {/* Student-only routes */}
+      <Route
+        path="/dashboard"
+        element={
+          <ProtectedRoute requireAdmin={false}>
+            <Dashboard />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Student-only protected pages */}
       <Route
         path="/membershippayment"
         element={
@@ -56,19 +67,21 @@ export default function App() {
         }
       />
 
-      <Route
-        path="/dashboard"
-        element={
-          <ProtectedRoute requireAdmin={true}>
-            <Dashboard />
-          </ProtectedRoute>
-        }
-      />
+      {/* Admin-only routes */}
       <Route
         path="/managebooks"
         element={
           <ProtectedRoute requireAdmin={true}>
             <ManageBooks />
+          </ProtectedRoute>
+        }
+      />
+      {/* Admin dashboard */}
+      <Route
+        path="/admin/dashboard"
+        element={
+          <ProtectedRoute requireAdmin={true}>
+            <Dashboard type="admin" />
           </ProtectedRoute>
         }
       />

@@ -38,7 +38,7 @@ export default function Dashboard() {
 
   const adminActions = [
     {
-      to: "/dashboard",
+      to: "/admin/dashboard",
       label: "Dashboard",
       desc: "Overview & stats",
       icon: Home,
@@ -80,6 +80,7 @@ export default function Dashboard() {
           : "Welcome back, Student! Manage your library activities here."}
       </p>
 
+      {/* Stats Section */}
       {isAdmin ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-6">
           <div className="bg-white p-5 rounded-xl shadow-md">
