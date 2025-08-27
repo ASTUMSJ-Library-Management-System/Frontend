@@ -1,6 +1,6 @@
-import React from 'react';
-import { Navigate, useLocation } from 'react-router-dom';
-import { useAuth } from '@/hooks/useAuth';
+import React from "react";
+import { Navigate, useLocation } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
 
 export const ProtectedRoute = ({ children, requireAdmin = false }) => {
   const { isAuthenticated, isAdmin, loading } = useAuth();
@@ -19,7 +19,13 @@ export const ProtectedRoute = ({ children, requireAdmin = false }) => {
   }
 
   if (requireAdmin && !isAdmin()) {
-    return <Navigate to="/login" state={{ from: location, message: "Admin access required" }} replace />;
+    return (
+      <Navigate
+        to="/browsebooks"
+        state={{ from: location, message: "Admin access required" }}
+        replace
+      />
+    );
   }
 
   return children;

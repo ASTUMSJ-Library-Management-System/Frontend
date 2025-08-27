@@ -13,11 +13,16 @@ import {
 } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
+import { Eye, EyeOff } from "lucide-react"; // 👁️ icons
+
 export function RegisterForm({ className, ...props }) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [department, setDepartment] = useState("");
+  const [showPassword, setShowPassword] = useState(false); // 👁️ toggle password
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
   const navigate = useNavigate();
   const { register: registerUser } = useAuth();
 
@@ -43,7 +48,7 @@ export function RegisterForm({ className, ...props }) {
     try {
       const userData = { ...data, department };
       const result = await registerUser(userData);
-      
+
       if (result.success) {
         setSuccess("Registration successful! Redirecting to dashboard...");
         setTimeout(() => {
@@ -75,7 +80,6 @@ export function RegisterForm({ className, ...props }) {
               <img src="/Frame.png" alt="Logo" className="h-12 w-12" />
             </div>
           </div>
-          
           <CardTitle className="text-[#006045] text-2xl font-bold">
             Join ASTUMSJ Library
           </CardTitle>
@@ -83,7 +87,7 @@ export function RegisterForm({ className, ...props }) {
             Create your student account to access library services
           </CardDescription>
         </CardHeader>
-        
+
         <CardContent>
           {error && (
             <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
@@ -99,22 +103,19 @@ export function RegisterForm({ className, ...props }) {
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <div className="text-[#008952B2] space-y-4">
+              {/* Full Name */}
               <div className="grid gap-2">
                 <Label htmlFor="name">Full Name</Label>
                 <Input
                   id="name"
                   type="text"
                   placeholder="Enter your full name"
-                  className={cn(
-                    "border-gray-300 focus:border-green-500 focus:ring-green-500",
-                    errors.name && "border-red-500 focus:border-red-500 focus:ring-red-500"
-                  )}
                   {...register("name", {
                     required: "Full name is required",
                     minLength: {
                       value: 2,
-                      message: "Name must be at least 2 characters"
-                    }
+                      message: "Name must be at least 2 characters",
+                    },
                   })}
                 />
                 {errors.name && (
@@ -122,22 +123,19 @@ export function RegisterForm({ className, ...props }) {
                 )}
               </div>
 
+              {/* Email */}
               <div className="grid gap-2">
                 <Label htmlFor="email">Email</Label>
                 <Input
                   id="email"
                   type="email"
                   placeholder="Enter your email"
-                  className={cn(
-                    "border-gray-300 focus:border-green-500 focus:ring-green-500",
-                    errors.email && "border-red-500 focus:border-red-500 focus:ring-red-500"
-                  )}
                   {...register("email", {
                     required: "Email is required",
                     pattern: {
                       value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                      message: "Invalid email address"
-                    }
+                      message: "Invalid email address",
+                    },
                   })}
                 />
                 {errors.email && (
@@ -145,39 +143,35 @@ export function RegisterForm({ className, ...props }) {
                 )}
               </div>
 
+              {/* Student ID */}
               <div className="grid gap-2">
                 <Label htmlFor="studentId">Student ID</Label>
                 <Input
                   id="studentId"
                   type="text"
                   placeholder="Enter your Student ID"
-                  className={cn(
-                    "border-gray-300 focus:border-green-500 focus:ring-green-500",
-                    errors.studentId && "border-red-500 focus:border-red-500 focus:ring-red-500"
-                  )}
                   {...register("studentId", {
                     required: "Student ID is required",
                     minLength: {
                       value: 5,
-                      message: "Student ID must be at least 5 characters"
-                    }
+                      message: "Student ID must be at least 5 characters",
+                    },
                   })}
                 />
                 {errors.studentId && (
-                  <p className="text-red-500 text-xs">{errors.studentId.message}</p>
+                  <p className="text-red-500 text-xs">
+                    {errors.studentId.message}
+                  </p>
                 )}
               </div>
 
+              {/* Department */}
               <div className="grid gap-2">
                 <Label htmlFor="department">Department</Label>
-                
                 <select
                   value={department}
-                  onChange={(e) => {
-                    console.log('Department selected:', e.target.value);
-                    setDepartment(e.target.value);
-                  }}
-                  className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm"
+                  onChange={(e) => setDepartment(e.target.value)}
+                  className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-green-500 focus:border-green-500 sm:text-sm"
                 >
                   <option value="">Select your department</option>
                   {departments.map((dept) => (
@@ -186,56 +180,68 @@ export function RegisterForm({ className, ...props }) {
                     </option>
                   ))}
                 </select>
-                
-                {!department && (
+                {errors.department && (
                   <p className="text-red-500 text-xs">Department is required</p>
-                )}
-                {department && (
-                  <p className="text-green-500 text-xs">Selected: {department}</p>
                 )}
               </div>
 
-              <div className="grid gap-2">
+              {/* Password */}
+              <div className="grid gap-2 relative">
                 <Label htmlFor="password">Password</Label>
                 <Input
                   id="password"
-                  type="password"
+                  type={showPassword ? "text" : "password"}
                   placeholder="Create Password"
-                  className={cn(
-                    "border-gray-300 focus:border-green-500 focus:ring-green-500",
-                    errors.password && "border-red-500 focus:border-red-500 focus:ring-red-500"
-                  )}
                   {...register("password", {
                     required: "Password is required",
                     minLength: {
                       value: 8,
-                      message: "Password must be at least 8 characters"
-                    }
+                      message: "Password must be at least 8 characters",
+                    },
                   })}
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-9 text-gray-500"
+                >
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
                 {errors.password && (
-                  <p className="text-red-500 text-xs">{errors.password.message}</p>
+                  <p className="text-red-500 text-xs">
+                    {errors.password.message}
+                  </p>
                 )}
               </div>
 
-              <div className="grid gap-2">
+              {/* Confirm Password */}
+              <div className="grid gap-2 relative">
                 <Label htmlFor="confirmPassword">Confirm Password</Label>
                 <Input
                   id="confirmPassword"
-                  type="password"
+                  type={showConfirmPassword ? "text" : "password"}
                   placeholder="Confirm your password"
-                  className={cn(
-                    "border-gray-300 focus:border-green-500 focus:ring-green-500",
-                    errors.confirmPassword && "border-red-500 focus:border-red-500 focus:ring-red-500"
-                  )}
                   {...register("confirmPassword", {
                     required: "Please confirm your password",
                     validate: (value) =>
-                      value === password || "Passwords do not match"
+                      value === password || "Passwords do not match",
                   })}
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  className="absolute right-3 top-9 text-gray-500"
+                >
+                  {showConfirmPassword ? (
+                    <EyeOff size={18} />
+                  ) : (
+                    <Eye size={18} />
+                  )}
+                </button>
                 {errors.confirmPassword && (
-                  <p className="text-red-500 text-xs">{errors.confirmPassword.message}</p>
+                  <p className="text-red-500 text-xs">
+                    {errors.confirmPassword.message}
+                  </p>
                 )}
               </div>
             </div>
@@ -245,14 +251,7 @@ export function RegisterForm({ className, ...props }) {
               disabled={isLoading}
               className="w-full bg-green-600 hover:bg-green-700 disabled:bg-green-400 disabled:cursor-not-allowed"
             >
-              {isLoading ? (
-                <div className="flex items-center justify-center">
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                  Creating Account...
-                </div>
-              ) : (
-                "Create Account"
-              )}
+              {isLoading ? "Creating Account..." : "Create Account"}
             </Button>
 
             <div className="text-center text-sm mt-2">
