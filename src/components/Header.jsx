@@ -1,7 +1,10 @@
 import React from "react";
 import { Menu, BookOpen } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function Header({ onMenuClick }) {
+  const { user } = useAuth();
+
   return (
     <div className="md:hidden sticky top-0 z-40 bg-white border-b shadow-sm">
       <div className="flex items-center justify-between px-4 py-3">
@@ -11,11 +14,12 @@ export default function Header({ onMenuClick }) {
           </div>
           <div className="leading-tight">
             <div className="font-semibold text-[#009966]">ASTUMSJ Library</div>
-            <div className="text-xs text-[#189966]">Student Panel</div>
+            <div className="text-xs text-[#189966]">
+              {user?.role === "admin" ? "Admin Panel" : "Student Panel"}
+            </div>
           </div>
         </div>
 
-        {/* Menu Button */}
         <button
           onClick={onMenuClick}
           className="p-2 rounded-md hover:bg-gray-100 active:scale-95"
