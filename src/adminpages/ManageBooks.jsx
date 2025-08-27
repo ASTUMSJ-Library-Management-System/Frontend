@@ -10,13 +10,13 @@ export default function ManageBooks() {
   const [category, setCategory] = useState("All");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingBook, setEditingBook] = useState(null);
+
   const filteredBooks = books.filter((book) => {
     const matchesSearch =
       book.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       book.author.toLowerCase().includes(searchTerm.toLowerCase()) ||
       book.isbn.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = category === "All" || book.category === category;
-
     return matchesSearch && matchesCategory;
   });
 
@@ -142,14 +142,12 @@ export default function ManageBooks() {
         </select>
       </div>
 
-      {/* Books Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredBooks.map((book) => (
           <div
             key={book.id}
             className="bg-white rounded-xl shadow p-4 flex flex-col"
           >
-            {/* Status + Copies */}
             <div className="flex justify-between items-start">
               <span
                 className={`px-3 py-1 text-xs font-semibold rounded-lg ${
@@ -206,8 +204,8 @@ export default function ManageBooks() {
       <Pagination totalPages={6} />
 
       {isModalOpen && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black/20 backdrop-blur-sm z-50">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl p-8 relative border border-gray-100">
+        <div className="fixed inset-0 flex items-center justify-center bg-black/20 backdrop-blur-sm z-50 px-4">
+          <div className="bg-white rounded-2xl shadow-xl w-[95%] max-w-2xl p-6 sm:p-8 relative border border-gray-100 max-h-[90vh] overflow-y-auto">
             <button
               onClick={() => {
                 setEditingBook(null);
@@ -218,7 +216,7 @@ export default function ManageBooks() {
               <X className="w-5 h-5" />
             </button>
 
-            <h2 className="text-2xl font-semibold mb-6 text-[#009966]">
+            <h2 className="text-xl sm:text-2xl font-semibold mb-6 text-[#009966]">
               {editingBook ? "Edit Book" : "Add New Book"}
             </h2>
 
@@ -230,6 +228,7 @@ export default function ManageBooks() {
               }}
               className="grid grid-cols-1 md:grid-cols-2 gap-6"
             >
+              {/* Inputs same as before */}
               <div className="flex flex-col">
                 <label className="text-sm font-medium text-[#009966] mb-1">
                   Title <span className="text-red-500">*</span>
@@ -344,10 +343,11 @@ export default function ManageBooks() {
                   className="border border-green-300 rounded-lg px-3 py-2 w-full focus:ring-2 focus:ring-green-400 focus:outline-none"
                 ></textarea>
               </div>
+
               <div className="md:col-span-2 flex justify-end mt-4">
                 <button
                   type="submit"
-                  className="bg-[#009966] text-white px-6 py-2 rounded-lg shadow-md hover:bg-[#007a52] transition"
+                  className="bg-[#009966] text-white px-6 py-2 rounded-lg shadow-md hover:bg-[#007a52] transition w-full sm:w-auto"
                 >
                   {editingBook ? "Save Changes" : "Add Book"}
                 </button>
