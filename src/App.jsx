@@ -9,6 +9,10 @@ import LoginPage from "./pages/LoginPage";
 import NotFound from "./pages/NotFound";
 import ProtectedRoute from "./components/ProtectedRoute";
 
+// Admin pages
+import ManageBooks from "./adminpages/ManageBooks";
+import ManageUsers from "./adminpages/ManageUsers";
+import PaymentRequests from "./adminpages/PaymentRequests";
 import BorrowingRecord from "./adminpages/BorrowingRecord";
 
 export default function App() {
@@ -20,6 +24,15 @@ export default function App() {
       <Route path="/signup" element={<SignupForm />} />
       <Route path="/login" element={<LoginPage />} />
 
+      {/* Student-only routes */}
+      <Route
+        path="/dashboard"
+        element={
+          <ProtectedRoute requireAdmin={false}>
+            <Dashboard />
+          </ProtectedRoute>
+        }
+      />
       <Route
         path="/membershippayment"
         element={
@@ -53,15 +66,39 @@ export default function App() {
         }
       />
 
+      {/* Admin-only routes */}
       <Route
-        path="/dashboard"
+        path="/admin/dashboard"
         element={
           <ProtectedRoute requireAdmin={true}>
-            <Dashboard />
+            <Dashboard type="admin" />
           </ProtectedRoute>
         }
       />
-
+      <Route
+        path="/managebooks"
+        element={
+          <ProtectedRoute requireAdmin={true}>
+            <ManageBooks />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/manageusers"
+        element={
+          <ProtectedRoute requireAdmin={true}>
+            <ManageUsers />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/paymentrequests"
+        element={
+          <ProtectedRoute requireAdmin={true}>
+            <PaymentRequests />
+          </ProtectedRoute>
+        }
+      />
       <Route
         path="/borrowingrecord"
         element={
