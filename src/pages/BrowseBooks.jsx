@@ -1,23 +1,116 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import AppLayout from "../components/AppLayout";
 import { Eye, Plus, X, Search } from "lucide-react";
-import books from "../data/books";
+import booksData from "../data/books";
+import { toast } from "sonner";
 
 export default function BrowseBooks() {
+  const navigate = useNavigate();
+
+  const [user, setUser] = useState({
+    hasMembership: true,
+    borrowedThisMonth: 2,
+    monthlyLimit: 3,
+  });
+
+  // Borrowed books state persisted in localStorage
+  const [borrowedBooks, setBorrowedBooks] = useState(
+    JSON.parse(localStorage.getItem("borrowedBooks")) || []
+  );
+
+  const [books, setBooks] = useState(booksData);
   const [selectedBook, setSelectedBook] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [category, setCategory] = useState("All");
+
+  // Sync borrowedBooks to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem("borrowedBooks", JSON.stringify(borrowedBooks));
+  }, [borrowedBooks]);
 
   const filteredBooks = books.filter((book) => {
     const matchesSearch =
       book.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       book.author.toLowerCase().includes(searchTerm.toLowerCase()) ||
       book.isbn.toLowerCase().includes(searchTerm.toLowerCase());
-
     const matchesCategory = category === "All" || book.category === category;
-
     return matchesSearch && matchesCategory;
   });
+
+  const decrementAvailable = (text) => {
+    const [left, right] = text.split("/").map(Number);
+    const newLeft = Math.max(0, left - 1);
+    return `${newLeft}/${right} available`;
+  };
+
+  const handleBorrow = (book) => {
+    if (!user.hasMembership) {
+      toast.error("Membership required", {
+        description: "Please pay your membership fee to borrow books.",
+      });
+      navigate("/membershippayment");
+      return;
+    }
+
+    if (user.borrowedThisMonth >= user.monthlyLimit) {
+      toast.error("Monthly borrow limit reached.");
+      return;
+    }
+
+    if (book.status !== "Available" || book.available.startsWith("0")) {
+      toast.error("This book is currently unavailable.");
+      return;
+    }
+
+    const dueDate = new Date();
+    dueDate.setDate(dueDate.getDate() + 14);
+
+    const quotes = [
+      "“Reading is a light for the soul.” – Enjoy your journey!",
+      "“Seek knowledge from the cradle to the grave.”",
+      "“A book is a garden you can carry in your pocket.”",
+      "“Knowledge is the key to guidance.”",
+    ];
+    const randomQuote = quotes[Math.floor(Math.random() * quotes.length)];
+
+    // Update borrowed books state
+    const updatedBorrowed = [
+      ...borrowedBooks,
+      { ...book, status: "Pending", borrowedDate: new Date(), dueDate },
+    ];
+    setBorrowedBooks(updatedBorrowed);
+
+    // Update books list with new availability and pending status
+    setBooks((prevBooks) =>
+      prevBooks.map((b) =>
+        b.id === book.id
+          ? {
+              ...b,
+              available: decrementAvailable(b.available),
+              status: decrementAvailable(b.available).startsWith("0")
+                ? "Not Available"
+                : "Pending",
+            }
+          : b
+      )
+    );
+
+    // Update user borrowed count
+    setUser((prev) => ({
+      ...prev,
+      borrowedThisMonth: prev.borrowedThisMonth + 1,
+    }));
+
+    toast.success(`📚 "${book.title}" borrowed successfully!`, {
+      description: `${randomQuote}\nReturn by: ${dueDate.toLocaleDateString()}\nRemaining borrows this month: ${
+        user.monthlyLimit - (user.borrowedThisMonth + 1)
+      }`,
+      duration: 4000,
+    });
+
+    navigate("/mybooks");
+  };
 
   return (
     <AppLayout>
@@ -28,6 +121,7 @@ export default function BrowseBooks() {
         Discover and borrow books from our Islamic library collection
       </p>
 
+      {/* Search + Filter */}
       <div className="flex flex-col md:flex-row items-center gap-3 mb-6">
         <div className="relative w-full md:flex-1">
           <Search
@@ -46,9 +140,7 @@ export default function BrowseBooks() {
         <select
           value={category}
           onChange={(e) => setCategory(e.target.value)}
-          className="border px-4 py-2 rounded-lg 
-                     focus:ring-2 focus:ring-[#009966] focus:border-[#009966]
-                     hover:border-[#009966] cursor-pointer outline-none"
+          className="border px-4 py-2 rounded-lg focus:ring-2 focus:ring-[#009966] focus:border-[#009966] hover:border-[#009966] cursor-pointer outline-none"
         >
           <option value="All">All Categories</option>
           {[...new Set(books.map((b) => b.category))].map((cat) => (
@@ -59,6 +151,7 @@ export default function BrowseBooks() {
         </select>
       </div>
 
+      {/* Book Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredBooks.map((book) => (
           <div
@@ -105,14 +198,13 @@ export default function BrowseBooks() {
         ))}
       </div>
 
+      {/* Modal */}
       {selectedBook && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div
             className="absolute inset-0 bg-black/40 backdrop-blur-[2px]"
             onClick={() => setSelectedBook(null)}
           />
-
-          {/* Modal Content */}
           <div className="relative bg-white rounded-2xl shadow-lg w-full max-w-4xl max-h-[90vh] overflow-y-auto flex flex-col md:flex-row">
             <div className="flex-1 p-6">
               <div className="flex items-center gap-2 mb-3">
@@ -152,7 +244,10 @@ export default function BrowseBooks() {
                 </p>
               </div>
 
-              <button className="bg-[#D0FAE5] text-gray-800 px-5 py-2 rounded-lg font-medium hover:bg-[#A8EFD1] transition flex items-center gap-2">
+              <button
+                onClick={() => handleBorrow(selectedBook)}
+                className="bg-[#D0FAE5] text-gray-800 px-5 py-2 rounded-lg font-medium hover:bg-[#A8EFD1] transition flex items-center gap-2"
+              >
                 <Plus size={18} /> Borrow This Book
               </button>
             </div>
