@@ -12,7 +12,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 
-/** Single nav row */
 function SideNavLink({ to, icon: IconComp, label, onClick }) {
   const { pathname } = useLocation();
   const active = pathname.toLowerCase() === to.toLowerCase();
@@ -44,7 +43,7 @@ export default function Sidebar({ isOpen = false, onClose = () => {} }) {
     navigate("/login");
   };
 
-  const links = [
+  const studentLinks = [
     { to: "/dashboard", label: "Dashboard", icon: Home },
     { to: "/browsebooks", label: "Browse Books", icon: BookOpen },
     { to: "/mybooks", label: "My Books", icon: Library },
@@ -52,9 +51,18 @@ export default function Sidebar({ isOpen = false, onClose = () => {} }) {
     { to: "/profile", label: "Profile", icon: User },
   ];
 
+  const adminLinks = [
+    { to: "/dashboard", label: "Dashboard", icon: Home },
+    { to: "/managebooks", label: "Manage Books", icon: BookOpen },
+    { to: "/manageusers", label: "Manage Users", icon: User },
+    { to: "/paymentrequests", label: "Payment Requests", icon: CreditCard },
+    { to: "/borrowingrecord", label: "Borrowing Record", icon: Library },
+  ];
+
+  const links = user?.role === "admin" ? adminLinks : studentLinks;
+
   const SidebarBody = ({ onItemClick }) => (
     <div className="h-full w-64 bg-white border-r flex flex-col justify-between p-4">
-      {/* Brand */}
       <div>
         <div className="flex items-center gap-3 mb-3 shadow-[0_1px_20px_0_#1D77571A] rounded-lg p-2">
           <div className="h-10 w-10 flex items-center justify-center rounded-lg bg-[#009966] shadow-sm">
@@ -72,7 +80,6 @@ export default function Sidebar({ isOpen = false, onClose = () => {} }) {
 
         <div className="h-[1px] w-full bg-[#5DDBA9]" />
 
-        {/* Nav */}
         <nav className="flex flex-col gap-2 mt-3">
           {links.map((l) => (
             <SideNavLink key={l.to} {...l} onClick={onItemClick} />
@@ -80,7 +87,6 @@ export default function Sidebar({ isOpen = false, onClose = () => {} }) {
         </nav>
       </div>
 
-      {/* Footer card + signout */}
       <div>
         <div className="flex flex-col gap-1 p-3 rounded-md border border-green-200 bg-[#ECFDF5] text-sm mb-3">
           <p className="font-semibold text-green-700">{user?.name || "User"}</p>
@@ -106,7 +112,7 @@ export default function Sidebar({ isOpen = false, onClose = () => {} }) {
 
   return (
     <>
-      <div className="hidden md:block fixed left-0 top-0 h-screen w-64">
+      <div className="hidden md:block fixed left-0 top-0 h-screen w-64 z-40">
         <SidebarBody />
       </div>
 
