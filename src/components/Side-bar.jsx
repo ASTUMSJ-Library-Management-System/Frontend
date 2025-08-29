@@ -62,7 +62,7 @@ export default function Sidebar({ isOpen = false, onClose = () => {} }) {
   const links = user?.role === "admin" ? adminLinks : studentLinks;
 
   const SidebarBody = ({ onItemClick }) => (
-    <div className="h-full w-64 bg-white border-r flex flex-col justify-between p-4">
+    <div className="h-screen w-64 bg-[#FFFFFF] border-r shadow-sm border border-gray-200 flex flex-col justify-between p-4">
       <div>
         <div className="flex items-center gap-3 mb-3 shadow-[0_1px_20px_0_#1D77571A] rounded-lg p-2">
           <div className="h-10 w-10 flex items-center justify-center rounded-lg bg-[#009966] shadow-sm">
@@ -100,10 +100,9 @@ export default function Sidebar({ isOpen = false, onClose = () => {} }) {
         </div>
         <Button
           onClick={handleLogout}
-          variant="outline"
-          className="w-full flex items-center gap-2 text-red-600 border-red-600 hover:bg-red-600 hover:text-white"
+          variant="ghost"
+          className="w-full h-[7] flex items-center justify-center gap-2 text-[#006045] font-semibold border-[#A4F4CF] rounded-lg bg-[#ffffff] hover:bg-[#A4F4CF] hover:text-[#006045]"
         >
-          <LogOut className="h-4 w-4" />
           Sign Out
         </Button>
       </div>
@@ -112,7 +111,7 @@ export default function Sidebar({ isOpen = false, onClose = () => {} }) {
 
   return (
     <>
-      <div className="hidden md:block fixed left-0 top-0 h-screen w-64 z-40">
+      <div className="hidden md:block shadow-sm border border-gray-200 fixed left-0 top-0 h-screen w-64 z-40">
         <SidebarBody />
       </div>
 
