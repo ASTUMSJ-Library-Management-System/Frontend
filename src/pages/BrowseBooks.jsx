@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import AppLayout from "../components/AppLayout";
 import { Eye, Plus, X, Search } from "lucide-react";
-import booksData from "../data/books";
+import booksData from "../data/books"; // your static books data
 import { toast } from "sonner";
 
 export default function BrowseBooks() {
@@ -14,7 +14,6 @@ export default function BrowseBooks() {
     monthlyLimit: 3,
   });
 
-  // Borrowed books state persisted in localStorage
   const [borrowedBooks, setBorrowedBooks] = useState(
     JSON.parse(localStorage.getItem("borrowedBooks")) || []
   );
@@ -24,7 +23,6 @@ export default function BrowseBooks() {
   const [searchTerm, setSearchTerm] = useState("");
   const [category, setCategory] = useState("All");
 
-  // Sync borrowedBooks to localStorage whenever it changes
   useEffect(() => {
     localStorage.setItem("borrowedBooks", JSON.stringify(borrowedBooks));
   }, [borrowedBooks]);
@@ -74,14 +72,12 @@ export default function BrowseBooks() {
     ];
     const randomQuote = quotes[Math.floor(Math.random() * quotes.length)];
 
-    // Update borrowed books state
     const updatedBorrowed = [
       ...borrowedBooks,
       { ...book, status: "Pending", borrowedDate: new Date(), dueDate },
     ];
     setBorrowedBooks(updatedBorrowed);
 
-    // Update books list with new availability and pending status
     setBooks((prevBooks) =>
       prevBooks.map((b) =>
         b.id === book.id
@@ -96,7 +92,6 @@ export default function BrowseBooks() {
       )
     );
 
-    // Update user borrowed count
     setUser((prev) => ({
       ...prev,
       borrowedThisMonth: prev.borrowedThisMonth + 1,
@@ -121,7 +116,6 @@ export default function BrowseBooks() {
         Discover and borrow books from our Islamic library collection
       </p>
 
-      {/* Search + Filter */}
       <div className="flex flex-col md:flex-row items-center gap-3 mb-6">
         <div className="relative w-full md:flex-1">
           <Search
@@ -151,7 +145,6 @@ export default function BrowseBooks() {
         </select>
       </div>
 
-      {/* Book Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredBooks.map((book) => (
           <div

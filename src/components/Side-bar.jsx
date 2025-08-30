@@ -52,11 +52,11 @@ export default function Sidebar({ isOpen = false, onClose = () => {} }) {
   ];
 
   const adminLinks = [
-    { to: "/dashboard", label: "Dashboard", icon: Home },
-    { to: "/managebooks", label: "Manage Books", icon: BookOpen },
-    { to: "/manageusers", label: "Manage Users", icon: User },
-    { to: "/paymentrequests", label: "Payment Requests", icon: CreditCard },
-    { to: "/borrowingrecord", label: "Borrowing Record", icon: Library },
+    { to: "/admin/dashboard", label: "Dashboard", icon: Home },
+    { to: "/admin/managebooks", label: "Manage Books", icon: BookOpen },
+    { to: "/admin/manageusers", label: "Manage Users", icon: User },
+    { to: "/admin/paymentrequests", label: "Payment Requests", icon: CreditCard },
+    { to: "/admin/borrowingrecord", label: "Borrowing Record", icon: Library },
   ];
 
   const links = user?.role === "admin" ? adminLinks : studentLinks;
