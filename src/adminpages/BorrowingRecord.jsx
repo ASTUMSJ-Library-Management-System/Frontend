@@ -1,9 +1,11 @@
-import Sidebar from "@/components/Side-bar";
 import React, { useState } from "react";
+import AppLayout from "@/components/AppLayout"; // ✅ Import AppLayout
 import Pagination from "@/components/Pagination";
+import books from "../data/books";
+import { Toaster, toast } from "sonner";
 
 export default function BorrowingRecords() {
-  const records = [
+  const initialRecords = [
     {
       id: 1,
       name: "Temkin Abdulmelik",
@@ -37,8 +39,11 @@ export default function BorrowingRecords() {
     },
   ];
 
+  const [records, setRecords] = useState(initialRecords);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("All Status");
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedRecord, setSelectedRecord] = useState(null);
 
   const statusColors = {
     Borrowed: "bg-blue-100 text-blue-600",
@@ -46,7 +51,31 @@ export default function BorrowingRecords() {
     Delayed: "bg-red-100 text-red-600",
   };
 
-  // Filtering logic
+  const handleDetailsClick = (record) => {
+    setSelectedRecord(record);
+    setIsModalOpen(true);
+  };
+
+  const handleMarkReturned = (recordId) => {
+    setRecords((prevRecords) =>
+      prevRecords.map((rec) =>
+        rec.id === recordId
+          ? {
+              ...rec,
+              status: "Returned",
+              returned: new Date().toLocaleDateString("en-US"),
+            }
+          : rec
+      )
+    );
+    toast.success("Book marked as returned!");
+  };
+
+  const closeModal = () => {
+    setIsModalOpen(false);
+    setSelectedRecord(null);
+  };
+
   const filteredRecords = records.filter((rec) => {
     const searchMatch =
       rec.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -60,18 +89,108 @@ export default function BorrowingRecords() {
     return searchMatch && statusMatch;
   });
 
-  return (
-    <div className="min-h-screen flex bg-[#EDFDF7]">
-      {/* Sidebar */}
-      <div className="w-64 bg-white shadow-md">
-        <Sidebar />
-      </div>
+  const getBookDetails = (bookTitle) => {
+    return books.find((book) => book.title === bookTitle);
+  };
 
-      {/* Main Content */}
-      <div className="flex-1 p-6 overflow-y-auto">
-        {/* Header with badges */}
+  const Modal = ({ record, onClose }) => {
+    if (!record) return null;
+
+    const bookDetails = getBookDetails(record.book);
+
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-25 flex items-center justify-center z-50 transition-opacity duration-300 ease-in-out opacity-100">
+        <div className="bg-white p-6 rounded-lg shadow-xl max-w-sm w-full transform transition-transform duration-300 ease-in-out scale-100">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-xl font-bold text-[#006045]">Record Details</h2>
+            <button
+              onClick={onClose}
+              className="text-gray-500 hover:text-gray-700"
+            >
+              ✕
+            </button>
+          </div>
+          <div className="space-y-2">
+            <p>
+              <span className="font-semibold">Student:</span> {record.name}
+            </p>
+            <p>
+              <span className="font-semibold">Student ID:</span>{" "}
+              {record.studentId}
+            </p>
+            <p>
+              <span className="font-semibold">Book:</span> {record.book}
+            </p>
+            <p>
+              <span className="font-semibold">Author:</span> {record.author}
+            </p>
+            {bookDetails && (
+              <>
+                <p>
+                  <span className="font-semibold">Year:</span>{" "}
+                  {bookDetails.year}
+                </p>
+                <p>
+                  <span className="font-semibold">ISBN:</span>{" "}
+                  {bookDetails.isbn}
+                </p>
+                <p>
+                  <span className="font-semibold">Language:</span>{" "}
+                  {bookDetails.language}
+                </p>
+                <p>
+                  <span className="font-semibold">Category:</span>{" "}
+                  {bookDetails.category}
+                </p>
+                <p>
+                  <span className="font-semibold">Description:</span>{" "}
+                  {bookDetails.longDescription}
+                </p>
+              </>
+            )}
+            <p>
+              <span className="font-semibold">Borrowed Date:</span>{" "}
+              {record.borrowed}
+            </p>
+            <p>
+              <span className="font-semibold">Due Date:</span> {record.due}
+            </p>
+            {record.returned && (
+              <p>
+                <span className="font-semibold">Returned Date:</span>{" "}
+                {record.returned}
+              </p>
+            )}
+            <p>
+              <span className="font-semibold">Status:</span>{" "}
+              <span
+                className={`px-2 py-1 rounded-full text-xs font-medium ${
+                  statusColors[record.status]
+                }`}
+              >
+                {record.status}
+              </span>
+            </p>
+          </div>
+          <div className="mt-4 flex justify-end">
+            <button
+              onClick={onClose}
+              className="px-4 py-2 bg-[#009966] text-white rounded-md hover:bg-[#006045]"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  return (
+    <AppLayout>
+      {" "}
+      <div className="p-6 overflow-y-auto">
         <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl text-[35px] text-[#006045] font-bold">
+          <h1 className="text-[35px] text-[#006045] font-bold">
             Borrowing Records
           </h1>
           <div className="flex gap-2">
@@ -87,11 +206,8 @@ export default function BorrowingRecords() {
           </div>
         </div>
 
-        {/* Search and Filter */}
-
         <div className="flex flex-col md:flex-row gap-3 mb-6 bg-white p-4 pt-5 rounded-lg border border-[#A4F4CF]">
           <div className="relative w-full md:flex-1">
-            {" "}
             <input
               type="text"
               placeholder="Search by student name, book, author, or student ID"
@@ -103,9 +219,9 @@ export default function BorrowingRecords() {
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="border border-[#A4F4CF] px-4  rounded-lg  pl-4 pr-4 py-[1px]
-                     focus:ring-2 focus:ring-[#009966] focus:border-[#009966]
-                     hover:border-[#009966] cursor-pointer outline-none"
+            className="border border-[#A4F4CF] px-4 rounded-lg py-[1px]
+              focus:ring-2 focus:ring-[#009966] focus:border-[#009966]
+              hover:border-[#009966] cursor-pointer outline-none"
           >
             <option>All Status</option>
             <option>Borrowed</option>
@@ -114,7 +230,6 @@ export default function BorrowingRecords() {
           </select>
         </div>
 
-        {/* Records List */}
         <div className="space-y-4">
           {filteredRecords.length > 0 ? (
             filteredRecords.map((rec) => (
@@ -122,8 +237,7 @@ export default function BorrowingRecords() {
                 key={rec.id}
                 className="bg-white rounded-lg shadow-sm border border-gray-200 p-4"
               >
-                <div className="flex justify-between border-[#A4F4CF] items-center">
-                  {/* Avatar and Student Info */}
+                <div className="flex justify-between items-center">
                   <div className="flex items-center gap-3">
                     <div className="w-12 h-12 rounded-full bg-[#C9FAE3] text-[#189966] flex items-center justify-center font-semibold">
                       {rec.name
@@ -137,7 +251,6 @@ export default function BorrowingRecords() {
                     </div>
                   </div>
 
-                  {/* Status Badge */}
                   <span
                     className={`px-3 py-1 rounded-full text-xs font-medium ${
                       statusColors[rec.status]
@@ -147,26 +260,29 @@ export default function BorrowingRecords() {
                   </span>
                 </div>
 
-                {/* Book Details */}
                 <div className="mt-6">
                   <p className="font-medium text-[#016549]">{rec.book}</p>
                   <p className="text-sm text-[#009966]">by {rec.author}</p>
                 </div>
 
-                {/* Dates */}
                 <div className="grid grid-cols-3 text-sm text-[#000000B2] mt-2">
                   <p>Borrowed: {rec.borrowed}</p>
                   <p>Due: {rec.due}</p>
                   {rec.returned && <p>Returned: {rec.returned}</p>}
                 </div>
 
-                {/* Actions */}
                 <div className="flex justify-between mt-4 gap-4">
-                  <button className="px-4 pl-10 pr-4 py-2 border relative w-[90%] md:flex-1 gap-3 p-4 bg-[#D0FAE5] text-[#009966] font-semibold rounded-md">
+                  <button
+                    onClick={() => handleDetailsClick(rec)}
+                    className="px-4 w-[90%] py-2 bg-[#D0FAE5] hover:bg-[#009966] hover:text-white text-[#009966] font-semibold rounded-md"
+                  >
                     Details
                   </button>
                   {rec.status !== "Returned" && (
-                    <button className="px-4 py-2 bg-[#00CA7A] text-[#FFFFFF] rounded-md hover:bg-green-600">
+                    <button
+                      onClick={() => handleMarkReturned(rec.id)}
+                      className="px-4 py-2 bg-[#00CA7A] text-white rounded-md hover:bg-green-600"
+                    >
                       Mark Returned
                     </button>
                   )}
@@ -181,6 +297,8 @@ export default function BorrowingRecords() {
         </div>
         <Pagination totalPages={6} />
       </div>
-    </div>
+      {isModalOpen && <Modal record={selectedRecord} onClose={closeModal} />}
+      <Toaster position="bottom-center" richColors />
+    </AppLayout>
   );
 }

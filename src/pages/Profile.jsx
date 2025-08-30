@@ -1,76 +1,170 @@
-import React from "react";
+import React, { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { X } from "lucide-react";
 import AppLayout from "../components/AppLayout";
+import { useAuth } from "@/hooks/useAuth";
+import { motion as Motion, AnimatePresence } from "framer-motion";
+
+const formatDate = (date) => {
+  return new Date(date).toISOString().split("T")[0];
+};
+
+const CenterModal = ({ isOpen, onClose, title, children }) => {
+  return (
+    <AnimatePresence>
+      {isOpen && (
+        <Motion.div
+          className="fixed inset-0 z-50 flex items-center justify-center"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+        >
+          <div className="absolute inset-0 bg-black/40" onClick={onClose}></div>
+
+          {/* Modal */}
+          <Motion.div
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0.9, opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="relative bg-white rounded-2xl shadow-lg w-full max-w-lg mx-4 p-6"
+          >
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-lg font-semibold text-[#006045]">{title}</h2>
+              <X
+                size={22}
+                className="cursor-pointer text-gray-600 hover:text-gray-800"
+                onClick={onClose}
+              />
+            </div>
+            {children}
+          </Motion.div>
+        </Motion.div>
+      )}
+    </AnimatePresence>
+  );
+};
 
 export default function ProfilePage() {
+  const { user } = useAuth();
+  const [editOpen, setEditOpen] = useState(false);
+  const [passwordOpen, setPasswordOpen] = useState(false);
+
+  const today = formatDate(new Date());
+  const oneMonthLater = formatDate(
+    new Date(new Date().setMonth(new Date().getMonth() + 1))
+  );
+
+  const [profile, setProfile] = useState({
+    name: user?.name || "Guest User",
+    studentId: user?.studentId || "N/A",
+    email: user?.email || "N/A",
+    department: user?.department || "N/A",
+    phone: user?.phone || "N/A",
+    joinDate: user?.joinDate || today,
+    membershipExpiry: user?.membershipExpiry || oneMonthLater,
+    status: user?.status || "Pending",
+  });
+
+  const [password, setPassword] = useState({
+    current: "",
+    newPassword: "",
+    confirm: "",
+  });
+
+  const handleProfileSave = (e) => {
+    e.preventDefault();
+    setEditOpen(false);
+    alert("Profile updated successfully!");
+  };
+
+  const handlePasswordSave = (e) => {
+    e.preventDefault();
+    if (password.newPassword !== password.confirm) {
+      alert("Passwords do not match!");
+      return;
+    }
+    setPasswordOpen(false);
+    alert("Password changed successfully!");
+  };
+
   return (
     <AppLayout>
-      <div className="flex-1 px-8 py-6">
+      <div className="flex-1 px-4 md:px-8 py-6">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-2xl font-bold text-[#006045]">Profile</h1>
-          <Button className="bg-[#00A16B] hover:bg-[#22b67b] text-white font-medium rounded-lg px-6">
+          <Button
+            onClick={() => setEditOpen(true)}
+            className="bg-[#00A16B] hover:bg-[#22b67b] text-white font-medium rounded-lg px-6"
+          >
             Edit Profile
           </Button>
         </div>
 
-        {/* Personal Information */}
-        <Card className="w-full h-full rounded-lg border border-[#D9F3EA] bg-white shadow-sm mb-6">
+        <Card className="w-full rounded-2xl border border-[#D9F3EA] bg-white shadow-md mb-6">
           <CardContent className="p-6">
-            <h2 className="font-semibold text-[#006045] mb-2">
+            <h2 className="font-semibold text-[#006045] mb-4">
               Personal Information
             </h2>
             <div className="flex flex-col md:flex-row gap-10 md:gap-20">
-              {/* Left: Avatar and Info */}
               <div className="flex flex-col items-start gap-1">
                 <div className="flex items-center gap-4 mb-2">
                   <div className="h-16 w-16 min-w-[64px] rounded-full bg-[#A4F4CF] flex items-center justify-center text-xl font-bold text-[#006045]">
-                    SU
+                    {profile.name?.charAt(0) || "U"}
                   </div>
                   <div className="flex flex-col">
                     <div className="font-medium text-gray-900">
-                      Temkin Abdulmelik
+                      {profile.name}
                     </div>
-                    <div className="text-sm text-gray-500">UGR/25555/14</div>
-                    <span className="mt-1 text-xs bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded-md font-medium w-fit">
-                      Pending
+                    <div className="text-sm text-gray-500">
+                      {profile.studentId}
+                    </div>
+                    <span
+                      className={`mt-1 text-xs px-2 py-0.5 rounded-md font-medium w-fit ${
+                        profile.status === "Active"
+                          ? "bg-green-100 text-green-700"
+                          : "bg-yellow-100 text-yellow-700"
+                      }`}
+                    >
+                      {profile.status}
                     </span>
                   </div>
                 </div>
               </div>
 
-              {/* Right: Details Grid */}
               <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-y-6 gap-x-16 text-sm">
                 <div>
                   <p className="font-semibold text-[#006045]">Email</p>
-                  <p className="text-gray-900 mt-1">abc@dfg.hi</p>
+                  <p className="text-gray-900 mt-1">{profile.email}</p>
                 </div>
                 <div>
                   <p className="font-semibold text-[#006045]">Department</p>
-                  <p className="text-gray-900 mt-1">CSE</p>
+                  <p className="text-gray-900 mt-1">{profile.department}</p>
                 </div>
                 <div>
                   <p className="font-semibold text-[#006045]">Phone</p>
-                  <p className="text-gray-900 mt-1">+251908976543</p>
+                  <p className="text-gray-900 mt-1">{profile.phone}</p>
                 </div>
                 <div>
                   <p className="font-semibold text-[#006045]">Join Date</p>
-                  <p className="text-gray-900 mt-1">1/2/2002</p>
+                  <p className="text-gray-900 mt-1">{profile.joinDate}</p>
                 </div>
                 <div>
                   <p className="font-semibold text-[#006045]">
-                    Membership Expired
+                    Membership Expiry
                   </p>
-                  <p className="text-gray-900 mt-1">12/31/2025</p>
+                  <p className="text-gray-900 mt-1">
+                    {profile.membershipExpiry}
+                  </p>
                 </div>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        {/* Security Setting */}
-        <Card className="w-full rounded-lg border border-[#D9F3EA] bg-[#ffffff] shadow-sm">
-          <CardContent className="p-6 flex justify-between items-center">
+        <Card className="w-full rounded-2xl border border-[#D9F3EA] bg-white shadow-md">
+          <CardContent className="p-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 md:gap-0">
             <div>
               <h2 className="font-semibold text-[#006045]">Security Setting</h2>
               <p className="text-gray-600 text-sm mt-2">
@@ -80,12 +174,150 @@ export default function ProfilePage() {
                 </span>
               </p>
             </div>
-            <Button className="bg-[#009966] hover:bg-[#22b67b] text-white font-medium rounded-lg px-6">
+            <Button
+              onClick={() => setPasswordOpen(true)}
+              className="bg-[#009966] hover:bg-[#22b67b] text-white font-medium rounded-lg px-6"
+            >
               Change Password
             </Button>
           </CardContent>
         </Card>
       </div>
+
+      <CenterModal
+        isOpen={editOpen}
+        onClose={() => setEditOpen(false)}
+        title="Edit Profile"
+      >
+        <form onSubmit={handleProfileSave} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700">
+              Name
+            </label>
+            <input
+              type="text"
+              required
+              value={profile.name}
+              onChange={(e) => setProfile({ ...profile, name: e.target.value })}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#00A16B] focus:outline-none"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700">
+              Email
+            </label>
+            <input
+              type="email"
+              required
+              value={profile.email}
+              onChange={(e) =>
+                setProfile({ ...profile, email: e.target.value })
+              }
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#00A16B] focus:outline-none"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700">
+              Phone
+            </label>
+            <input
+              type="tel"
+              required
+              value={profile.phone}
+              onChange={(e) =>
+                setProfile({ ...profile, phone: e.target.value })
+              }
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#00A16B] focus:outline-none"
+            />
+          </div>
+          <div className="flex justify-end gap-3 pt-4">
+            <Button
+              type="button"
+              onClick={() => setEditOpen(false)}
+              className="px-5 py-2 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 
+               active:bg-gray-300 transition font-medium shadow-sm"
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              className="px-5 py-2 rounded-lg bg-[#00A16B] text-white hover:bg-[#22b67b] 
+               active:bg-[#008f5e] transition font-medium shadow-sm"
+            >
+              Save
+            </Button>
+          </div>
+        </form>
+      </CenterModal>
+
+      <CenterModal
+        isOpen={passwordOpen}
+        onClose={() => setPasswordOpen(false)}
+        title="Change Password"
+      >
+        <form onSubmit={handlePasswordSave} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700">
+              Current Password
+            </label>
+            <input
+              type="password"
+              required
+              value={password.current}
+              onChange={(e) =>
+                setPassword({ ...password, current: e.target.value })
+              }
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#00A16B] focus:outline-none"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700">
+              New Password
+            </label>
+            <input
+              type="password"
+              required
+              minLength={6}
+              value={password.newPassword}
+              onChange={(e) =>
+                setPassword({ ...password, newPassword: e.target.value })
+              }
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#00A16B] focus:outline-none"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700">
+              Confirm Password
+            </label>
+            <input
+              type="password"
+              required
+              value={password.confirm}
+              onChange={(e) =>
+                setPassword({ ...password, confirm: e.target.value })
+              }
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#00A16B] focus:outline-none"
+            />
+          </div>
+          <div className="flex justify-end gap-3 pt-4">
+            <Button
+              type="button"
+              onClick={() => setPasswordOpen(false)}
+              className="px-5 py-2 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 
+               active:bg-gray-300 transition font-medium shadow-sm"
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              className="px-5 py-2 rounded-lg bg-[#009966] text-white hover:bg-[#22b67b] 
+               active:bg-[#008f5e] transition font-medium shadow-sm"
+            >
+              Change Password
+            </Button>
+          </div>
+        </form>
+      </CenterModal>
     </AppLayout>
   );
 }
