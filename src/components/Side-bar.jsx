@@ -9,7 +9,7 @@ import {
   User,
   LogOut,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/ui/Button";
 import { useAuth } from "@/hooks/useAuth";
 
 function SideNavLink({ to, icon: IconComp, label, onClick }) {
@@ -55,7 +55,11 @@ export default function Sidebar({ isOpen = false, onClose = () => {} }) {
     { to: "/admin/dashboard", label: "Dashboard", icon: Home },
     { to: "/admin/managebooks", label: "Manage Books", icon: BookOpen },
     { to: "/admin/manageusers", label: "Manage Users", icon: User },
-    { to: "/admin/paymentrequests", label: "Payment Requests", icon: CreditCard },
+    {
+      to: "/admin/paymentrequests",
+      label: "Payment Requests",
+      icon: CreditCard,
+    },
     { to: "/admin/borrowingrecord", label: "Borrowing Record", icon: Library },
   ];
 

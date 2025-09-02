@@ -13,14 +13,14 @@ import {
 } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
-import { Eye, EyeOff } from "lucide-react"; // 👁️ icons
+import { Eye, EyeOff } from "lucide-react"; // icons
 
 export function RegisterForm({ className, ...props }) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [department, setDepartment] = useState("");
-  const [showPassword, setShowPassword] = useState(false); // 👁️ toggle password
+  const [showPassword, setShowPassword] = useState(false); //  toggle password
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const navigate = useNavigate();

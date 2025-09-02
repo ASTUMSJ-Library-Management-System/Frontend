@@ -1,8 +1,9 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import AppLayout from "../components/AppLayout";
 import { BookOpen, Library, CreditCard, User, Home } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import api from "@/lib/api";
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -69,6 +70,29 @@ export default function Dashboard() {
     },
   ];
 
+  const [adminStats, setAdminStats] = useState(null);
+  const [memberSummary, setMemberSummary] = useState(null);
+
+  useEffect(() => {
+    let isMounted = true;
+    const fetchData = async () => {
+      try {
+        if (isAdmin) {
+          const res = await api.get('/admin/stats');
+          if (isMounted) setAdminStats(res.data);
+        } else {
+          const res = await api.get('/user/me/summary');
+          if (isMounted) setMemberSummary(res.data);
+        }
+      } catch (e) {
+        // optionally handle with a toast
+        console.error('Dashboard fetch error', e);
+      }
+    };
+    fetchData();
+    return () => { isMounted = false; };
+  }, [isAdmin]);
+
   return (
     <AppLayout>
       <h1 className="text-2xl md:text-3xl font-bold text-[#009966]">
@@ -80,21 +104,20 @@ export default function Dashboard() {
           : "Welcome back, Student! Manage your library activities here."}
       </p>
 
-      {/* Stats Section */}
       {isAdmin ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-6">
           <div className="bg-white p-5 rounded-xl shadow-md">
             <p className="text-gray-500">Total Users</p>
-            <h2 className="text-2xl font-bold text-[#009966]">124</h2>
+            <h2 className="text-2xl font-bold text-[#009966]">{adminStats?.totalUsers ?? '--'}</h2>
           </div>
           <div className="bg-white p-5 rounded-xl shadow-md">
             <p className="text-gray-500">Books Available</p>
-            <h2 className="text-2xl font-bold text-[#009966]">1,247</h2>
+            <h2 className="text-2xl font-bold text-[#009966]">{adminStats?.availableBooks ?? '--'}</h2>
           </div>
           <div className="bg-white p-5 rounded-xl shadow-md">
             <p className="text-gray-500">Pending Payments</p>
             <span className="bg-yellow-200 text-yellow-800 px-2 py-1 rounded text-sm font-semibold">
-              8 Requests
+              {adminStats?.pendingPayments ?? '--'} Requests
             </span>
           </div>
         </div>
@@ -102,24 +125,24 @@ export default function Dashboard() {
         <div>
           <div className="bg-yellow-100 border-l-4 border-yellow-400 text-yellow-800 p-4 mt-4 rounded-md text-sm md:text-base">
             Your membership payment is{" "}
-            <span className="font-semibold">pending</span>. Please wait for
+            <span className="font-semibold">{memberSummary?.payment?.status ?? 'Unknown'}</span>. Please wait for
             admin approval.
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-6">
             <div className="bg-white p-5 rounded-xl shadow-md">
               <p className="text-gray-500">Books Borrowed</p>
-              <h2 className="text-2xl font-bold text-[#009966]">2</h2>
+              <h2 className="text-2xl font-bold text-[#009966]">{memberSummary?.booksBorrowed ?? '--'}</h2>
             </div>
             <div className="bg-white p-5 rounded-xl shadow-md">
               <p className="text-gray-500">Payment Status</p>
               <span className="bg-yellow-200 text-yellow-800 px-2 py-1 rounded text-sm font-semibold">
-                Pending
+                {memberSummary?.payment?.status ?? 'Unknown'}
               </span>
             </div>
             <div className="bg-white p-5 rounded-xl shadow-md">
               <p className="text-gray-500">Available Books</p>
-              <h2 className="text-2xl font-bold text-[#009966]">1,247</h2>
+              <h2 className="text-2xl font-bold text-[#009966]">{memberSummary?.availableBooks ?? '--'}</h2>
             </div>
           </div>
 
@@ -128,29 +151,23 @@ export default function Dashboard() {
               Currently Borrowed Books
             </h2>
 
-            <div className="border-b border-gray-200 pb-4 mb-4">
-              <p className="font-medium">Sahih Al-Bukhari</p>
-              <p className="text-sm text-gray-600">by Imam Bukhari</p>
-              <p className="text-xs text-gray-500">Borrowed: Nov 15, 2025</p>
-              <div className="flex justify-between mt-2">
-                <span className="bg-yellow-200 text-yellow-800 px-2 py-1 rounded text-xs font-semibold">
-                  30 days left
-                </span>
-                <span className="text-sm text-gray-600">Due: Dec 15, 2025</span>
-              </div>
-            </div>
-
-            <div>
-              <p className="font-medium">Tafsir Ibn Kathir - Vol 1</p>
-              <p className="text-sm text-gray-600">by Ibn Kathir</p>
-              <p className="text-xs text-gray-500">Borrowed: Nov 10, 2025</p>
-              <div className="flex justify-between mt-2">
-                <span className="bg-red-200 text-red-800 px-2 py-1 rounded text-xs font-semibold">
-                  Overdue
-                </span>
-                <span className="text-sm text-gray-600">Due: Jan 24, 2025</span>
-              </div>
-            </div>
+            {(memberSummary?.currentBorrows?.length ?? 0) === 0 ? (
+              <div className="text-gray-600">No active borrowed books.</div>
+            ) : (
+              memberSummary.currentBorrows.map((b) => (
+                <div key={b.id} className="border-b border-gray-200 pb-4 mb-4">
+                  <p className="font-medium">{b.book?.title ?? 'Unknown Title'}</p>
+                  <p className="text-sm text-gray-600">by {b.book?.author ?? 'Unknown Author'}</p>
+                  <p className="text-xs text-gray-500">Borrowed: {new Date(b.borrowDate).toLocaleDateString()}</p>
+                  <div className="flex justify-between mt-2">
+                    <span className={`px-2 py-1 rounded text-xs font-semibold ${b.status === 'Overdue' ? 'bg-red-200 text-red-800' : 'bg-yellow-200 text-yellow-800'}`}>
+                      {b.status}
+                    </span>
+                    <span className="text-sm text-gray-600">Due: {new Date(b.dueDate).toLocaleDateString()}</span>
+                  </div>
+                </div>
+              ))
+            )}
           </div>
         </div>
       )}

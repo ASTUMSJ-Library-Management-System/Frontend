@@ -1,54 +1,38 @@
-import React, { useState } from "react";
-import AppLayout from "@/components/AppLayout"; // ✅ Import AppLayout
+import React, { useState, useEffect } from "react";
+import AppLayout from "@/components/AppLayout";
 import Pagination from "@/components/Pagination";
-import books from "../data/books";
+import { borrowAPI } from "../lib/api";
 import { Toaster, toast } from "sonner";
 
 export default function BorrowingRecords() {
-  const initialRecords = [
-    {
-      id: 1,
-      name: "Temkin Abdulmelik",
-      studentId: "UGR/2565/14",
-      book: "Sahih Al-Bukhari",
-      author: "Imam Al-Bukhari",
-      borrowed: "1/10/2025",
-      due: "2/10/2025",
-      status: "Borrowed",
-    },
-    {
-      id: 2,
-      name: "Lina T",
-      studentId: "UGR/2566/14",
-      book: "Shiz",
-      author: "Turab bin Turab",
-      borrowed: "1/10/2025",
-      due: "2/10/2025",
-      returned: "1/20/2025",
-      status: "Returned",
-    },
-    {
-      id: 3,
-      name: "Khulud M",
-      studentId: "UGR/2565/14",
-      book: "Sahih Al-Bukhari",
-      author: "Imam Al-Bukhari",
-      borrowed: "1/10/2025",
-      due: "2/10/2025",
-      status: "Delayed",
-    },
-  ];
-
-  const [records, setRecords] = useState(initialRecords);
+  const [records, setRecords] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("All Status");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedRecord, setSelectedRecord] = useState(null);
 
+  useEffect(() => {
+    fetchBorrowRecords();
+  }, []);
+
+  const fetchBorrowRecords = async () => {
+    try {
+      setLoading(true);
+      const borrowData = await borrowAPI.getBorrows();
+      setRecords(borrowData);
+    } catch (error) {
+      toast.error(error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const statusColors = {
-    Borrowed: "bg-blue-100 text-blue-600",
+    Active: "bg-blue-100 text-blue-600",
+    Pending: "bg-yellow-100 text-yellow-600",
     Returned: "bg-green-100 text-green-600",
-    Delayed: "bg-red-100 text-red-600",
+    Overdue: "bg-red-100 text-red-600",
   };
 
   const handleDetailsClick = (record) => {
@@ -56,19 +40,24 @@ export default function BorrowingRecords() {
     setIsModalOpen(true);
   };
 
-  const handleMarkReturned = (recordId) => {
-    setRecords((prevRecords) =>
-      prevRecords.map((rec) =>
-        rec.id === recordId
-          ? {
-              ...rec,
-              status: "Returned",
-              returned: new Date().toLocaleDateString("en-US"),
-            }
-          : rec
-      )
-    );
-    toast.success("Book marked as returned!");
+  const handleApprove = async (recordId) => {
+    try {
+      await borrowAPI.approveReturn(recordId);
+      await fetchBorrowRecords();
+      toast.success("Return approved.");
+    } catch (error) {
+      toast.error(error.message);
+    }
+  };
+
+  const handleDecline = async (recordId) => {
+    try {
+      await borrowAPI.declineReturn(recordId);
+      await fetchBorrowRecords();
+      toast.success("Return request declined.");
+    } catch (error) {
+      toast.error(error.message);
+    }
   };
 
   const closeModal = () => {
@@ -78,10 +67,10 @@ export default function BorrowingRecords() {
 
   const filteredRecords = records.filter((rec) => {
     const searchMatch =
-      rec.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      rec.book.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      rec.studentId.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      rec.author.toLowerCase().includes(searchTerm.toLowerCase());
+      rec.userId?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      rec.bookId?.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      rec.userId?.studentId?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      rec.bookId?.author?.toLowerCase().includes(searchTerm.toLowerCase());
 
     const statusMatch =
       statusFilter === "All Status" || rec.status === statusFilter;
@@ -89,14 +78,14 @@ export default function BorrowingRecords() {
     return searchMatch && statusMatch;
   });
 
-  const getBookDetails = (bookTitle) => {
-    return books.find((book) => book.title === bookTitle);
+  const getBookDetails = (bookId) => {
+    return records.find((record) => record.bookId?._id === bookId)?.bookId;
   };
 
   const Modal = ({ record, onClose }) => {
     if (!record) return null;
 
-    const bookDetails = getBookDetails(record.book);
+    const bookDetails = getBookDetails(record.bookId?._id);
 
     return (
       <div className="fixed inset-0 bg-black bg-opacity-25 flex items-center justify-center z-50 transition-opacity duration-300 ease-in-out opacity-100">
@@ -112,17 +101,17 @@ export default function BorrowingRecords() {
           </div>
           <div className="space-y-2">
             <p>
-              <span className="font-semibold">Student:</span> {record.name}
+              <span className="font-semibold">Student:</span> {record.userId?.name || "Unknown User"}
             </p>
             <p>
               <span className="font-semibold">Student ID:</span>{" "}
-              {record.studentId}
+              {record.userId?.studentId || "No ID"}
             </p>
             <p>
-              <span className="font-semibold">Book:</span> {record.book}
+              <span className="font-semibold">Book:</span> {record.bookId?.title || "Unknown Book"}
             </p>
             <p>
-              <span className="font-semibold">Author:</span> {record.author}
+              <span className="font-semibold">Author:</span> {record.bookId?.author || "Unknown Author"}
             </p>
             {bookDetails && (
               <>
@@ -144,28 +133,28 @@ export default function BorrowingRecords() {
                 </p>
                 <p>
                   <span className="font-semibold">Description:</span>{" "}
-                  {bookDetails.longDescription}
+                  {bookDetails.description}
                 </p>
               </>
             )}
             <p>
               <span className="font-semibold">Borrowed Date:</span>{" "}
-              {record.borrowed}
+              {new Date(record.borrowDate).toLocaleDateString()}
             </p>
             <p>
-              <span className="font-semibold">Due Date:</span> {record.due}
+              <span className="font-semibold">Due Date:</span> {new Date(record.dueDate).toLocaleDateString()}
             </p>
-            {record.returned && (
+            {record.status === "Returned" && (
               <p>
                 <span className="font-semibold">Returned Date:</span>{" "}
-                {record.returned}
+                {new Date(record.updatedAt).toLocaleDateString()}
               </p>
             )}
             <p>
               <span className="font-semibold">Status:</span>{" "}
               <span
                 className={`px-2 py-1 rounded-full text-xs font-medium ${
-                  statusColors[record.status]
+                  statusColors[record.status] || "bg-gray-100 text-gray-800"
                 }`}
               >
                 {record.status}
@@ -185,9 +174,18 @@ export default function BorrowingRecords() {
     );
   };
 
+  if (loading) {
+    return (
+      <AppLayout>
+        <div className="flex justify-center items-center h-64">
+          <div className="text-lg">Loading borrowing records...</div>
+        </div>
+      </AppLayout>
+    );
+  }
+
   return (
     <AppLayout>
-      {" "}
       <div className="p-6 overflow-y-auto">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-[35px] text-[#006045] font-bold">
@@ -198,7 +196,7 @@ export default function BorrowingRecords() {
               Total: {records.length}
             </span>
             <span className="px-3 py-1 rounded-full text-xs font-medium bg-[#3374FF4D] text-[#435CFF]">
-              Borrowed: {records.filter((r) => r.status === "Borrowed").length}
+              Borrowed: {records.filter((r) => r.status === "Active").length}
             </span>
             <span className="px-3 py-1 rounded-full text-xs font-medium bg-[#FF333E4D] text-[#FF4347]">
               Overdue: {records.filter((r) => r.status === "Overdue").length}
@@ -224,7 +222,8 @@ export default function BorrowingRecords() {
               hover:border-[#009966] cursor-pointer outline-none"
           >
             <option>All Status</option>
-            <option>Borrowed</option>
+            <option>Active</option>
+            <option>Pending</option>
             <option>Returned</option>
             <option>Overdue</option>
           </select>
@@ -234,26 +233,26 @@ export default function BorrowingRecords() {
           {filteredRecords.length > 0 ? (
             filteredRecords.map((rec) => (
               <div
-                key={rec.id}
+                key={rec._id}
                 className="bg-white rounded-lg shadow-sm border border-gray-200 p-4"
               >
                 <div className="flex justify-between items-center">
                   <div className="flex items-center gap-3">
                     <div className="w-12 h-12 rounded-full bg-[#C9FAE3] text-[#189966] flex items-center justify-center font-semibold">
-                      {rec.name
-                        .split(" ")
+                      {rec.userId?.name
+                        ?.split(" ")
                         .map((n) => n[0])
-                        .join("")}
+                        .join("") || "U"}
                     </div>
                     <div>
-                      <p className="font-semibold text-[#189966]">{rec.name}</p>
-                      <p className="text-sm text-[#189966]">{rec.studentId}</p>
+                      <p className="font-semibold text-[#189966]">{rec.userId?.name || "Unknown User"}</p>
+                      <p className="text-sm text-[#189966]">{rec.userId?.studentId || "No ID"}</p>
                     </div>
                   </div>
 
                   <span
                     className={`px-3 py-1 rounded-full text-xs font-medium ${
-                      statusColors[rec.status]
+                      statusColors[rec.status] || "bg-gray-100 text-gray-800"
                     }`}
                   >
                     {rec.status}
@@ -261,14 +260,14 @@ export default function BorrowingRecords() {
                 </div>
 
                 <div className="mt-6">
-                  <p className="font-medium text-[#016549]">{rec.book}</p>
-                  <p className="text-sm text-[#009966]">by {rec.author}</p>
+                  <p className="font-medium text-[#016549]">{rec.bookId?.title || "Unknown Book"}</p>
+                  <p className="text-sm text-[#009966]">by {rec.bookId?.author || "Unknown Author"}</p>
                 </div>
 
                 <div className="grid grid-cols-3 text-sm text-[#000000B2] mt-2">
-                  <p>Borrowed: {rec.borrowed}</p>
-                  <p>Due: {rec.due}</p>
-                  {rec.returned && <p>Returned: {rec.returned}</p>}
+                  <p>Borrowed: {new Date(rec.borrowDate).toLocaleDateString()}</p>
+                  <p>Due: {new Date(rec.dueDate).toLocaleDateString()}</p>
+                  {rec.status === "Returned" && <p>Returned: {new Date(rec.updatedAt).toLocaleDateString()}</p>}
                 </div>
 
                 <div className="flex justify-between mt-4 gap-4">
@@ -278,13 +277,25 @@ export default function BorrowingRecords() {
                   >
                     Details
                   </button>
-                  {rec.status !== "Returned" && (
-                    <button
-                      onClick={() => handleMarkReturned(rec.id)}
-                      className="px-4 py-2 bg-[#00CA7A] text-white rounded-md hover:bg-green-600"
-                    >
-                      Mark Returned
-                    </button>
+                  {rec.status === "Pending" ? (
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => handleApprove(rec._id)}
+                        className="px-4 py-2 bg-[#00CA7A] text-white rounded-md hover:bg-green-600"
+                      >
+                        Approve
+                      </button>
+                      <button
+                        onClick={() => handleDecline(rec._id)}
+                        className="px-4 py-2 bg-[#FF6B6B] text-white rounded-md hover:bg-red-600"
+                      >
+                        Decline
+                      </button>
+                    </div>
+                  ) : (
+                    rec.status !== "Returned" && (
+                      <span className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md">No pending action</span>
+                    )
                   )}
                 </div>
               </div>

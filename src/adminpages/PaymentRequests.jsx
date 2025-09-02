@@ -1,65 +1,10 @@
-import React, { useState } from "react";
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import React, { useState, useEffect } from "react";
+import { Card, CardContent } from "@/components/ui/Card";
+import { Button } from "@/components/ui/Button";
 import AppLayout from "../components/AppLayout";
 import PaymentReviewModal from "../components/PaymentReviewModal";
-
-const pendingRequests = [
-  {
-    name: "Ahmed Hassan",
-    email: "ahmed@student.edu",
-    id: "ST001",
-    amount: "Br50",
-    submitted: "1/15/2024",
-    ref: "TXN123456789",
-    notes: "Paid via mobile money",
-    date: "1/15/2024",
-  },
-  {
-    name: "Seid Nasir",
-    email: "seid@student.edu",
-    id: "ST002",
-    amount: "Br50",
-    submitted: "1/15/2024",
-    ref: "TXN123456790",
-    notes: "Paid via bank transfer",
-    date: "1/15/2024",
-  },
-  {
-    name: "Seid Nasir",
-    email: "seid@student.edu",
-    id: "ST003",
-    amount: "Br50",
-    submitted: "1/15/2024",
-    ref: "TXN123456791",
-    notes: "Paid via bank transfer",
-    date: "1/15/2024",
-  },
-];
-
-const allRequests = [
-  {
-    name: "Lina T",
-    email: "lina@student.edu",
-    amount: "Br50",
-    submitted: "1/15/2024",
-    status: "Pending",
-  },
-  {
-    name: "Tursina Ishak",
-    email: "tursina@student.edu",
-    amount: "Br50",
-    submitted: "1/15/2024",
-    status: "Approved",
-  },
-  {
-    name: "Khulud M",
-    email: "kulud@student.edu",
-    amount: "Br50",
-    submitted: "1/15/2024",
-    status: "Rejected",
-  },
-];
+import { paymentAPI } from "../lib/api";
+import { toast } from "sonner";
 
 const getStatusBadgeColor = (status) => {
   switch (status) {
@@ -77,12 +22,53 @@ const getStatusBadgeColor = (status) => {
 export default function PaymentsPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedPayment, setSelectedPayment] = useState(null);
+  const [payments, setPayments] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  // Function to handle the "Review" button click
+  useEffect(() => {
+    fetchPayments();
+  }, []);
+
+  const fetchPayments = async () => {
+    try {
+      setLoading(true);
+      const paymentsData = await paymentAPI.getPayments();
+      console.log("Fetched payments data:", paymentsData); // Debug log
+      setPayments(paymentsData);
+    } catch (error) {
+      toast.error(error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleStatusUpdate = async (paymentId, newStatus) => {
+    try {
+      await paymentAPI.updatePaymentStatus(paymentId, newStatus);
+      await fetchPayments();
+      toast.success(`Payment ${newStatus.toLowerCase()} successfully!`);
+    } catch (error) {
+      toast.error(error.message);
+    }
+  };
+
+  const pendingRequests = payments.filter(payment => payment.status === "Pending");
+  const allRequests = payments;
+
   const handleReviewClick = (payment) => {
     setSelectedPayment(payment);
     setIsModalOpen(true);
   };
+
+  if (loading) {
+    return (
+      <AppLayout>
+        <div className="flex justify-center items-center h-64">
+          <div className="text-lg">Loading payments...</div>
+        </div>
+      </AppLayout>
+    );
+  }
 
   return (
     <AppLayout>
@@ -108,31 +94,34 @@ export default function PaymentsPage() {
             </p>
 
             <div className="space-y-4">
-              {pendingRequests.map((request, index) => (
-                <div
-                  key={index}
-                  className="flex items-center justify-between p-4 border border-[#D9B85F] rounded-lg bg-[#FFFCEA] shadow-sm "
-                >
-                  <div className="flex flex-col gap-1 text-sm">
-                    <p className="font-medium mb-2 text-[#997F18]">
-                      {request.name}
-                    </p>
-                    <p className="text-[#997F18] font-normal">
-                      {request.email} • ID: {request.id} • Amount:{" "}
-                      {request.amount} • Submitted: {request.submitted}
-                    </p>
-                    <p className="text-[#997F18] font-normal">
-                      Ref: {request.ref}
-                    </p>
-                  </div>
-                  <Button
-                    onClick={() => handleReviewClick(request)}
-                    className="bg-[#FFFCEA] hover:bg-[#ecdc82] text-[#997B18] border border-[#FAD91C] font-medium rounded-lg px-6 shadow-sm"
+              {pendingRequests.length === 0 ? (
+                <p className="text-[#997B18] text-center py-4">No pending payments</p>
+              ) : (
+                pendingRequests.map((request) => (
+                  <div
+                    key={request._id}
+                    className="flex items-center justify-between p-4 border border-[#D9B85F] rounded-lg bg-[#FFFCEA] shadow-sm"
                   >
-                    Review
-                  </Button>
-                </div>
-              ))}
+                    <div className="flex flex-col gap-1 text-sm">
+                      <p className="font-medium mb-2 text-[#997F18]">
+                        {request.userId?.username || request.user?.username || request.userId?.name || request.user?.name || "Unknown User"}
+                      </p>
+                      <p className="text-[#997F18] font-normal">
+                        {request.userId?.email || request.user?.email || "No email"} • Amount: Br50 • Submitted: {new Date(request.createdAt).toLocaleDateString()}
+                      </p>
+                      <p className="text-[#997F18] font-normal">
+                        Ref: {request.reference || "No reference"}
+                      </p>
+                    </div>
+                    <Button
+                      onClick={() => handleReviewClick(request)}
+                      className="bg-[#FFFCEA] hover:bg-[#ecdc82] text-[#997B18] border border-[#FAD91C] font-medium rounded-lg px-6 shadow-sm"
+                    >
+                      Review
+                    </Button>
+                  </div>
+                ))
+              )}
             </div>
           </CardContent>
         </Card>
@@ -148,45 +137,45 @@ export default function PaymentsPage() {
             </p>
 
             <div className="space-y-4">
-              {allRequests.map((request, index) => (
-                <div
-                  key={index}
-                  className={`flex items-center justify-between p-4 border-[#ECFDF5] rounded-lg shadow-sm shadow-grey-200 bg-[#ECFDF5] 
-                  ${(
-                    <div className="shadow-grey-100 rounded-lg p-4">
-                      request.status === "Pending" ? "bg-[#FFE550CF]
-                      border-[#FAD91C] font-semibold text-[#997B18]" :
-                      request.status === "Approved" ? "bg-[#C9FAE3]
-                      text-[#189966] font-semibold border-[#A4F4CF]" :
-                      request.status === "Rejected" ? "bg-[#FFB7B4CF]
-                      text-[#C3090C] font-semibold border-[#FAD91C]" : ""
-                    </div>
-                  )} border`}
-                >
-                  <div className="flex flex-col gap-1 text-sm">
-                    <p className="font-medium text-[#189966]">{request.name}</p>
-                    <p className="text-[#189966] font-normal">
-                      {request.email} • {request.amount} • {request.submitted}
-                    </p>
-                  </div>
-                  <span
-                    className={`text-xs px-2 py-0.5 rounded-md font-medium w-fit ${getStatusBadgeColor(
-                      request.status
-                    )}`}
+              {allRequests.length === 0 ? (
+                <p className="text-[#189966] text-center py-4">No payment requests found</p>
+              ) : (
+                allRequests.map((request) => (
+                  <div
+                    key={request._id}
+                    className={`flex items-center justify-between p-4 border-[#ECFDF5] rounded-lg shadow-sm shadow-grey-200 bg-[#ECFDF5] 
+                    ${request.status === "Pending" ? "bg-[#FFE550CF] border-[#FAD91C] font-semibold text-[#997B18]" :
+                      request.status === "Approved" ? "bg-[#C9FAE3] text-[#189966] font-semibold border-[#A4F4CF]" :
+                      request.status === "Rejected" ? "bg-[#FFB7B4CF] text-[#C3090C] font-semibold border-[#FAD91C]" : ""
+                    } border`}
                   >
-                    {request.status}
-                  </span>
-                </div>
-              ))}
+                    <div className="flex flex-col gap-1 text-sm">
+                      <p className="font-medium text-[#189966]">{request.userId?.username || request.user?.username || request.userId?.name || request.user?.name || "Unknown User"}</p>
+                      <p className="text-[#189966] font-normal">
+                        {request.userId?.email || request.user?.email || "No email"} • Br50 • {new Date(request.createdAt).toLocaleDateString()}
+                      </p>
+                    </div>
+                    <span
+                      className={`text-xs px-2 py-0.5 rounded-md font-medium w-fit ${getStatusBadgeColor(
+                        request.status
+                      )}`}
+                    >
+                      {request.status}
+                    </span>
+                  </div>
+                ))
+              )}
             </div>
           </CardContent>
         </Card>
       </div>
+      
       {/* Render the modal component here */}
       <PaymentReviewModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         paymentData={selectedPayment}
+        onStatusUpdate={handleStatusUpdate}
       />
     </AppLayout>
   );

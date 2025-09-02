@@ -2,38 +2,49 @@ import React, { useEffect, useMemo, useState } from "react";
 import AppLayout from "../components/AppLayout";
 import { X, Eye, Search, CheckCircle2 } from "lucide-react";
 import { motion as Motion, AnimatePresence } from "framer-motion";
+import { borrowAPI } from "../lib/api";
+import { toast } from "sonner";
 
 export default function MyBooks() {
   const [borrowedBooks, setBorrowedBooks] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [selectedBook, setSelectedBook] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
-  const [toast, setToast] = useState(null);
 
   useEffect(() => {
-    const stored = JSON.parse(localStorage.getItem("borrowedBooks")) || [];
-    setBorrowedBooks(stored);
+    fetchMyBorrows();
   }, []);
 
-  const handleReturn = (id) => {
-    const updated = borrowedBooks.filter((b) => b.id !== id);
-    setBorrowedBooks(updated);
-    localStorage.setItem("borrowedBooks", JSON.stringify(updated));
+  const fetchMyBorrows = async () => {
+    try {
+      setLoading(true);
+      const borrowsData = await borrowAPI.getMyBorrows();
+      setBorrowedBooks(borrowsData);
+    } catch (error) {
+      toast.error(error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    setToast("Book returned successfully!");
-    setTimeout(() => setToast(null), 3000);
+  const handleRequestReturn = async (borrowId) => {
+    try {
+      await borrowAPI.requestReturn(borrowId);
+      await fetchMyBorrows();
+      toast.success("Return request submitted. Waiting for admin approval.");
+    } catch (error) {
+      toast.error(error.message);
+    }
   };
 
   const counts = useMemo(() => {
     const toLower = (s) => (s ? String(s).toLowerCase() : "");
     return {
       total: borrowedBooks.length,
-      borrowed: borrowedBooks.filter((b) => toLower(b.status) === "borrowed")
-        .length,
-      pending: borrowedBooks.filter((b) => toLower(b.status) === "pending")
-        .length,
-      overdue: borrowedBooks.filter((b) => toLower(b.status) === "overdue")
-        .length,
+      borrowed: borrowedBooks.filter((b) => toLower(b.status) === "active").length,
+      pending: borrowedBooks.filter((b) => toLower(b.status) === "pending").length,
+      overdue: borrowedBooks.filter((b) => toLower(b.status) === "overdue").length,
     };
   }, [borrowedBooks]);
 
@@ -56,11 +67,12 @@ export default function MyBooks() {
 
   const statusPillClasses = (status) => {
     const s = String(status || "").toLowerCase();
-    if (s === "borrowed")
+    if (s === "active")
       return "bg-green-100 text-green-800 border border-green-200";
     if (s === "pending")
       return "bg-yellow-100 text-yellow-800 border border-yellow-200";
     if (s === "overdue") return "bg-red-100 text-red-800 border border-red-200";
+    if (s === "returned") return "bg-blue-100 text-blue-800 border border-blue-200";
     return "bg-gray-100 text-gray-700 border border-gray-200";
   };
 
@@ -68,7 +80,7 @@ export default function MyBooks() {
     const q = searchTerm.trim().toLowerCase();
     const matchSearch =
       !q ||
-      [b.title, b.author, b.studentName, b.studentId]
+      [b.bookId?.title, b.bookId?.author, b.userId?.name, b.userId?.studentId]
         .filter(Boolean)
         .some((v) => String(v).toLowerCase().includes(q));
     const matchStatus =
@@ -77,6 +89,16 @@ export default function MyBooks() {
         : String(b.status).toLowerCase() === statusFilter.toLowerCase();
     return matchSearch && matchStatus;
   });
+
+  if (loading) {
+    return (
+      <AppLayout>
+        <div className="flex justify-center items-center h-64">
+          <div className="text-lg">Loading your borrowed books...</div>
+        </div>
+      </AppLayout>
+    );
+  }
 
   return (
     <AppLayout>
@@ -88,7 +110,7 @@ export default function MyBooks() {
             "Borrowed",
             counts.borrowed,
             "bg-green-100 text-green-800",
-            "Borrowed"
+            "Active"
           )}
           {getBadge(
             "Pending",
@@ -124,9 +146,10 @@ export default function MyBooks() {
                      focus:outline-none focus:ring-2 focus:ring-[#009966]"
         >
           <option>All</option>
-          <option>Borrowed</option>
+          <option>Active</option>
           <option>Pending</option>
           <option>Overdue</option>
+          <option>Returned</option>
         </select>
       </div>
 
@@ -139,13 +162,13 @@ export default function MyBooks() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredBooks.map((book) => (
           <div
-            key={book.id}
+            key={book._id}
             className="bg-white rounded-2xl shadow-md hover:shadow-lg transition overflow-hidden flex flex-col"
           >
             <div className="relative bg-gray-50">
               <img
-                src={book.image}
-                alt={book.title}
+                src={book.bookId?.image || "https://via.placeholder.com/150"}
+                alt={book.bookId?.title || "Book"}
                 className="w-full h-56 object-contain p-4 block"
               />
               <span
@@ -158,12 +181,12 @@ export default function MyBooks() {
             </div>
 
             <div className="p-6 flex flex-col flex-1">
-              <h3 className="text-lg font-semibold truncate">{book.title}</h3>
+              <h3 className="text-lg font-semibold truncate">{book.bookId?.title || "Unknown Book"}</h3>
               <p className="text-gray-500 text-sm mb-2 truncate">
-                {book.author}
+                {book.bookId?.author || "Unknown Author"}
               </p>
               <p className="text-gray-600 text-xs mb-4">
-                Borrowed: {new Date(book.borrowedDate).toLocaleDateString()} |
+                Borrowed: {new Date(book.borrowDate).toLocaleDateString()} |
                 Due: {new Date(book.dueDate).toLocaleDateString()}
               </p>
 
@@ -175,13 +198,16 @@ export default function MyBooks() {
                 >
                   <Eye size={16} /> View Details
                 </button>
-                <button
-                  onClick={() => handleReturn(book.id)}
-                  className="flex-1 bg-gradient-to-r from-[#ff6b6b] to-[#ff4757] text-white font-semibold
-                             px-4 py-2 rounded-lg hover:scale-105 transition-transform flex items-center justify-center gap-2"
-                >
-                  <X size={16} /> Return
-                </button>
+                {book.status !== "Returned" && (
+                  <button
+                    onClick={() => handleRequestReturn(book._id)}
+                    className="flex-1 bg-gradient-to-r from-[#ff6b6b] to-[#ff4757] text-white font-semibold
+                               px-4 py-2 rounded-lg hover:scale-105 transition-transform flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
+                    disabled={book.status === "Pending"}
+                  >
+                    <X size={16} /> {book.status === "Pending" ? "Pending Approval" : "Request Return"}
+                  </button>
+                )}
               </div>
             </div>
           </div>
@@ -201,49 +227,34 @@ export default function MyBooks() {
             >
               <X size={22} />
             </button>
-            <h2 className="text-2xl font-bold mb-2">{selectedBook.title}</h2>
-            <p className="text-gray-600 mb-4">{selectedBook.author}</p>
-            <p className="text-gray-700 mb-4">{selectedBook.longDescription}</p>
+            <h2 className="text-2xl font-bold mb-2">{selectedBook.bookId?.title || "Unknown Book"}</h2>
+            <p className="text-gray-600 mb-4">{selectedBook.bookId?.author || "Unknown Author"}</p>
+            <p className="text-gray-700 mb-4">{selectedBook.bookId?.description || "No description available"}</p>
             <div className="grid grid-cols-2 gap-4 text-sm text-gray-600 mb-4">
               <div>
                 <span className="font-medium">Language:</span>{" "}
-                {selectedBook.language}
+                {selectedBook.bookId?.language || "Unknown"}
               </div>
               <div>
-                <span className="font-medium">ISBN:</span> {selectedBook.isbn}
-              </div>
-              <div>
-                <span className="font-medium">Copies:</span>{" "}
-                {selectedBook.available}
+                <span className="font-medium">ISBN:</span> {selectedBook.bookId?.isbn || "Unknown"}
               </div>
               <div>
                 <span className="font-medium">Status:</span>{" "}
                 {selectedBook.status}
               </div>
+              <div>
+                <span className="font-medium">Due Date:</span>{" "}
+                {new Date(selectedBook.dueDate).toLocaleDateString()}
+              </div>
             </div>
             <img
-              src={selectedBook.image}
-              alt={selectedBook.title}
+              src={selectedBook.bookId?.image || "https://via.placeholder.com/150"}
+              alt={selectedBook.bookId?.title || "Book"}
               className="w-full h-60 object-contain bg-gray-50"
             />
           </div>
         </div>
       )}
-
-      <AnimatePresence>
-        {toast && (
-          <Motion.div
-            initial={{ opacity: 0, y: 50 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 50 }}
-            transition={{ duration: 0.4 }}
-            className="fixed bottom-6 right-6 bg-white border border-green-200 shadow-lg rounded-xl px-5 py-3 flex items-center gap-3 z-[9999]"
-          >
-            <CheckCircle2 className="text-green-600 w-6 h-6" />
-            <span className="text-gray-700 font-medium">{toast}</span>
-          </Motion.div>
-        )}
-      </AnimatePresence>
     </AppLayout>
   );
 }

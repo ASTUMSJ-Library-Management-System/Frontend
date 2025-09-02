@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import AppLayout from "../components/AppLayout";
 import { Eye, Plus, X, Search } from "lucide-react";
-import booksData from "../data/books"; // your static books data
+import { studentBookAPI, borrowAPI } from "../lib/api";
 import { toast } from "sonner";
 
 export default function BrowseBooks() {
@@ -18,31 +18,44 @@ export default function BrowseBooks() {
     JSON.parse(localStorage.getItem("borrowedBooks")) || []
   );
 
-  const [books, setBooks] = useState(booksData);
+  const [books, setBooks] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [selectedBook, setSelectedBook] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [category, setCategory] = useState("All");
 
   useEffect(() => {
+    fetchBooks();
+  }, []);
+
+  useEffect(() => {
     localStorage.setItem("borrowedBooks", JSON.stringify(borrowedBooks));
   }, [borrowedBooks]);
+
+  const fetchBooks = async () => {
+    try {
+      setLoading(true);
+      const booksData = await studentBookAPI.getBooks();
+      setBooks(booksData);
+    } catch (error) {
+      toast.error(error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const filteredBooks = books.filter((book) => {
     const matchesSearch =
       book.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       book.author.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      book.isbn.toLowerCase().includes(searchTerm.toLowerCase());
+      (book.ISBN || book.isbn || "").toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = category === "All" || book.category === category;
     return matchesSearch && matchesCategory;
   });
 
-  const decrementAvailable = (text) => {
-    const [left, right] = text.split("/").map(Number);
-    const newLeft = Math.max(0, left - 1);
-    return `${newLeft}/${right} available`;
-  };
 
-  const handleBorrow = (book) => {
+
+  const handleBorrow = async (book) => {
     if (!user.hasMembership) {
       toast.error("Membership required", {
         description: "Please pay your membership fee to borrow books.",
@@ -56,56 +69,60 @@ export default function BrowseBooks() {
       return;
     }
 
-    if (book.status !== "Available" || book.available.startsWith("0")) {
+    if (book.availableCopies <= 0) {
       toast.error("This book is currently unavailable.");
       return;
     }
 
-    const dueDate = new Date();
-    dueDate.setDate(dueDate.getDate() + 14);
+    try {
+      await borrowAPI.borrowBook(book._id);
+      
+      const dueDate = new Date();
+      dueDate.setDate(dueDate.getDate() + 14);
 
-    const quotes = [
-      "“Reading is a light for the soul.” – Enjoy your journey!",
-      "“Seek knowledge from the cradle to the grave.”",
-      "“A book is a garden you can carry in your pocket.”",
-      "“Knowledge is the key to guidance.”",
-    ];
-    const randomQuote = quotes[Math.floor(Math.random() * quotes.length)];
+      const quotes = [
+        "“Reading is a light for the soul.” – Enjoy your journey!",
+        "“Seek knowledge from the cradle to the grave.”",
+        "“A book is a garden you can carry in your pocket.”",
+        "“Knowledge is the key to guidance.”",
+      ];
+      const randomQuote = quotes[Math.floor(Math.random() * quotes.length)];
 
-    const updatedBorrowed = [
-      ...borrowedBooks,
-      { ...book, status: "Pending", borrowedDate: new Date(), dueDate },
-    ];
-    setBorrowedBooks(updatedBorrowed);
+      const updatedBorrowed = [
+        ...borrowedBooks,
+        { ...book, status: "Pending", borrowedDate: new Date(), dueDate },
+      ];
+      setBorrowedBooks(updatedBorrowed);
 
-    setBooks((prevBooks) =>
-      prevBooks.map((b) =>
-        b.id === book.id
-          ? {
-              ...b,
-              available: decrementAvailable(b.available),
-              status: decrementAvailable(b.available).startsWith("0")
-                ? "Not Available"
-                : "Pending",
-            }
-          : b
-      )
-    );
+      setUser((prev) => ({
+        ...prev,
+        borrowedThisMonth: prev.borrowedThisMonth + 1,
+      }));
 
-    setUser((prev) => ({
-      ...prev,
-      borrowedThisMonth: prev.borrowedThisMonth + 1,
-    }));
+      toast.success(`📚 "${book.title}" borrowed successfully!`, {
+        description: `${randomQuote}\nReturn by: ${dueDate.toLocaleDateString()}\nRemaining borrows this month: ${
+          user.monthlyLimit - (user.borrowedThisMonth + 1)
+        }`,
+        duration: 4000,
+      });
 
-    toast.success(`📚 "${book.title}" borrowed successfully!`, {
-      description: `${randomQuote}\nReturn by: ${dueDate.toLocaleDateString()}\nRemaining borrows this month: ${
-        user.monthlyLimit - (user.borrowedThisMonth + 1)
-      }`,
-      duration: 4000,
-    });
-
-    navigate("/mybooks");
+      // Refresh books to update availability
+      await fetchBooks();
+      navigate("/mybooks");
+    } catch (error) {
+      toast.error(error.message);
+    }
   };
+
+  if (loading) {
+    return (
+      <AppLayout>
+        <div className="flex justify-center items-center h-64">
+          <div className="text-lg">Loading books...</div>
+        </div>
+      </AppLayout>
+    );
+  }
 
   return (
     <AppLayout>
@@ -148,7 +165,7 @@ export default function BrowseBooks() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredBooks.map((book) => (
           <div
-            key={book.id}
+            key={book._id}
             className="bg-white rounded-xl shadow-md hover:shadow-lg transition flex flex-col relative"
           >
             <span className="absolute top-3 left-3 bg-[#E6F7F1] text-[#009966] text-xs font-medium px-3 py-1 rounded-full">
@@ -157,16 +174,16 @@ export default function BrowseBooks() {
 
             <span
               className={`absolute top-3 right-3 px-3 py-1 text-xs font-semibold rounded-full ${
-                book.status === "Available"
+                book.availableCopies > 0
                   ? "bg-green-100 text-green-700"
                   : "bg-red-100 text-red-700"
               }`}
             >
-              {book.status}
+              {book.availableCopies > 0 ? "Available" : "Not Available"}
             </span>
 
             <img
-              src={book.image}
+              src={book.image || "https://via.placeholder.com/150"}
               alt={book.title}
               className="w-full h-56 object-contain p-4"
             />
@@ -206,21 +223,21 @@ export default function BrowseBooks() {
                 </span>
                 <span
                   className={`text-xs font-semibold px-3 py-1 rounded-full ${
-                    selectedBook.status === "Available"
+                    selectedBook.availableCopies > 0
                       ? "bg-green-100 text-green-700"
                       : "bg-red-100 text-red-700"
                   }`}
                 >
-                  {selectedBook.status}
+                  {selectedBook.availableCopies > 0 ? "Available" : "Not Available"}
                 </span>
               </div>
 
               <h2 className="text-xl font-bold">{selectedBook.title}</h2>
               <p className="text-sm text-gray-500 mb-3">
-                by {selectedBook.author} • {selectedBook.year}
+                by {selectedBook.author} • {selectedBook.publicationYear || selectedBook.year}
               </p>
               <p className="text-gray-700 text-sm leading-relaxed mb-4">
-                {selectedBook.longDescription || selectedBook.description}
+                {selectedBook.description}
               </p>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm text-gray-600 mb-6">
@@ -229,11 +246,11 @@ export default function BrowseBooks() {
                   {selectedBook.language}
                 </p>
                 <p>
-                  <span className="font-medium">ISBN:</span> {selectedBook.isbn}
+                  <span className="font-medium">ISBN:</span> {selectedBook.ISBN || selectedBook.isbn}
                 </p>
                 <p>
                   <span className="font-medium">Copies:</span>{" "}
-                  {selectedBook.available}
+                  {selectedBook.availableCopies}/{selectedBook.totalCopies}
                 </p>
               </div>
 
@@ -247,7 +264,7 @@ export default function BrowseBooks() {
 
             <div className="flex-1 bg-gray-50 flex items-center justify-center p-6">
               <img
-                src={selectedBook.image}
+                src={selectedBook.image || "https://via.placeholder.com/150"}
                 alt={selectedBook.title}
                 className="max-h-72 md:max-h-80 w-auto object-contain"
               />

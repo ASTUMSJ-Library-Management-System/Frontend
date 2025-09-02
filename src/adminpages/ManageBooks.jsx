@@ -1,105 +1,130 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Search, Plus, Pencil, Trash, X } from "lucide-react";
-import booksData from "../data/books";
+import { bookAPI } from "../lib/api";
 import AppLayout from "../components/AppLayout";
 import Pagination from "@/components/Pagination";
+import { toast, Toaster } from "sonner";
 
 export default function ManageBooks() {
-  const [books, setBooks] = useState(booksData);
+  const [books, setBooks] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [category, setCategory] = useState("All");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingBook, setEditingBook] = useState(null);
 
+  useEffect(() => {
+    fetchBooks();
+  }, []);
+
+  const fetchBooks = async () => {
+    try {
+      setLoading(true);
+      const booksData = await bookAPI.getBooks();
+      setBooks(booksData);
+    } catch (error) {
+      toast.error(error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const filteredBooks = books.filter((book) => {
     const matchesSearch =
       book.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       book.author.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      book.isbn.toLowerCase().includes(searchTerm.toLowerCase());
+      (book.ISBN || book.isbn || "").toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = category === "All" || book.category === category;
     return matchesSearch && matchesCategory;
   });
 
-  const handleDelete = (id) => {
+  const handleDelete = async (id) => {
     if (window.confirm("Are you sure you want to delete this book?")) {
-      setBooks(books.filter((b) => b.id !== id));
+      try {
+        await bookAPI.deleteBook(id);
+        await fetchBooks();
+        toast.success("Book deleted successfully!");
+      } catch (error) {
+        toast.error(error.message);
+      }
     }
   };
 
-  const handleSave = (formData) => {
-    const title = formData.get("title").trim();
-    const author = formData.get("author").trim();
-    const isbn = formData.get("isbn").trim();
-    const category = formData.get("category").trim();
-    const copies = formData.get("copies").trim();
-    const year = formData.get("year").trim();
-    const language = formData.get("language").trim();
-    const description = formData.get("description").trim();
+  const handleSave = async (formElData) => {
+    const title = formElData.get("title").trim();
+    const author = formElData.get("author").trim();
+    const isbn = formElData.get("isbn").trim();
+    const category = formElData.get("category").trim();
+    const totalCopies = parseInt(formElData.get("copies").trim());
+    const year = formElData.get("year").trim();
+    const language = formElData.get("language").trim();
+    const description = formElData.get("description").trim();
+    const imageFile = formElData.get("image");
 
     if (
       !title ||
       !author ||
       !isbn ||
       !category ||
-      !copies ||
+      !totalCopies ||
       !year ||
       !language
     ) {
-      alert("⚠️ Please fill all required fields.");
+      toast.error("Please fill all required fields.");
       return false;
     }
 
     if (isbn.length < 10) {
-      alert("⚠️ ISBN must be at least 10 characters long.");
+      toast.error("ISBN must be at least 10 characters long.");
       return false;
     }
 
-    if (copies <= 0) {
-      alert("⚠️ Total copies must be greater than 0.");
+    if (totalCopies <= 0) {
+      toast.error("Total copies must be greater than 0.");
       return false;
     }
 
-    if (editingBook) {
-      setBooks(
-        books.map((b) =>
-          b.id === editingBook.id
-            ? {
-                ...b,
-                title,
-                author,
-                isbn,
-                category,
-                copies,
-                year,
-                language,
-                description,
-              }
-            : b
-        )
-      );
-      alert("✅ Book updated successfully!");
-    } else {
-      const newBook = {
-        id: Date.now(),
-        title,
-        author,
-        isbn,
-        category,
-        copies,
-        year,
-        language,
-        description,
-        status: "Available",
-        image: "https://via.placeholder.com/150",
-      };
-      setBooks([...books, newBook]);
-      alert("✅ Book added successfully!");
-    }
+    try {
+      const fd = new FormData();
+      fd.append('title', title);
+      fd.append('author', author);
+      fd.append('ISBN', isbn);
+      fd.append('category', category);
+      fd.append('totalCopies', String(totalCopies));
+      fd.append('publicationYear', String(parseInt(year)));
+      fd.append('language', language);
+      fd.append('description', description);
+      if (imageFile && imageFile instanceof File && imageFile.size > 0) {
+        fd.append('image', imageFile);
+      }
 
-    setEditingBook(null);
-    setIsModalOpen(false);
-    return true;
+      if (editingBook) {
+        await bookAPI.updateBook(editingBook._id, fd);
+        toast.success("Book updated successfully!");
+      } else {
+        await bookAPI.addBook(fd);
+        toast.success("Book added successfully!");
+      }
+
+      await fetchBooks();
+      setEditingBook(null);
+      setIsModalOpen(false);
+      return true;
+    } catch (error) {
+      toast.error(error.message);
+      return false;
+    }
   };
+
+  if (loading) {
+    return (
+      <AppLayout>
+        <div className="flex justify-center items-center h-64">
+          <div className="text-lg">Loading books...</div>
+        </div>
+      </AppLayout>
+    );
+  }
 
   return (
     <AppLayout>
@@ -145,26 +170,26 @@ export default function ManageBooks() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredBooks.map((book) => (
           <div
-            key={book.id}
+            key={book._id}
             className="bg-white rounded-xl shadow p-4 flex flex-col"
           >
             <div className="flex justify-between items-start">
               <span
                 className={`px-3 py-1 text-xs font-semibold rounded-lg ${
-                  book.status === "Available"
+                  book.availableCopies > 0
                     ? "bg-green-100 text-green-600"
                     : "bg-red-100 text-red-600"
                 }`}
               >
-                {book.status}
+                {book.availableCopies > 0 ? "Available" : "Unavailable"}
               </span>
               <span className="text-xs text-gray-500">
-                {book.copies} copies
+                {book.availableCopies}/{book.totalCopies} copies
               </span>
             </div>
 
             <img
-              src={book.image}
+              src={book.image || "https://via.placeholder.com/150"}
               alt={book.title}
               className="h-40 w-full object-contain my-3"
             />
@@ -173,9 +198,10 @@ export default function ManageBooks() {
               {book.title}
             </h2>
             <p className="text-sm text-gray-600">by {book.author}</p>
-            <p className="text-xs text-gray-500">Year: {book.year}</p>
+            <p className="text-xs text-gray-500">Year: {book.publicationYear || book.year}</p>
             <p className="text-xs text-gray-500">Language: {book.language}</p>
             <p className="text-xs text-gray-500">Category: {book.category}</p>
+            <p className="text-xs text-gray-500">ISBN: {book.ISBN || book.isbn}</p>
             <p className="text-sm text-gray-700 mt-2">{book.description}</p>
 
             <div className="flex gap-2 mt-4">
@@ -190,7 +216,7 @@ export default function ManageBooks() {
                 Edit
               </button>
               <button
-                onClick={() => handleDelete(book.id)}
+                onClick={() => handleDelete(book._id)}
                 className="flex items-center gap-1 px-3 py-1.5 rounded-md bg-[#FEECEC] text-[#FF3B30] hover:bg-[#fcd6d6] cursor-pointer shadow-sm"
               >
                 <Trash className="w-4 h-4 text-[#FF3B30]" />
@@ -228,7 +254,6 @@ export default function ManageBooks() {
               }}
               className="grid grid-cols-1 md:grid-cols-2 gap-6"
             >
-              {/* Inputs same as before */}
               <div className="flex flex-col">
                 <label className="text-sm font-medium text-[#009966] mb-1">
                   Title <span className="text-red-500">*</span>
@@ -262,7 +287,7 @@ export default function ManageBooks() {
                 <input
                   name="isbn"
                   type="text"
-                  defaultValue={editingBook?.isbn || ""}
+                  defaultValue={editingBook?.ISBN || editingBook?.isbn || ""}
                   required
                   minLength={10}
                   className="border border-green-300 rounded-lg px-3 py-2 w-full focus:ring-2 focus:ring-green-400 focus:outline-none"
@@ -296,7 +321,7 @@ export default function ManageBooks() {
                   <input
                     name="copies"
                     type="number"
-                    defaultValue={editingBook?.copies || ""}
+                    defaultValue={editingBook?.totalCopies || ""}
                     required
                     min="1"
                     className="border border-green-300 rounded-lg px-3 py-2 w-full focus:ring-2 focus:ring-green-400 focus:outline-none"
@@ -310,7 +335,7 @@ export default function ManageBooks() {
                   <input
                     name="year"
                     type="number"
-                    defaultValue={editingBook?.year || ""}
+                    defaultValue={editingBook?.publicationYear || editingBook?.year || ""}
                     required
                     min="1500"
                     max={new Date().getFullYear()}
@@ -344,6 +369,21 @@ export default function ManageBooks() {
                 ></textarea>
               </div>
 
+              <div className="flex flex-col md:col-span-2">
+                <label className="text-sm font-medium text-[#009966] mb-1">
+                  Cover Image
+                </label>
+                <input
+                  name="image"
+                  type="file"
+                  accept="image/*"
+                  className="border border-green-300 rounded-lg px-3 py-2 w-full focus:ring-2 focus:ring-green-400 focus:outline-none"
+                />
+                {editingBook?.image && (
+                  <img src={editingBook.image} alt="Current cover" className="mt-2 h-24 object-contain" />
+                )}
+              </div>
+
               <div className="md:col-span-2 flex justify-end mt-4">
                 <button
                   type="submit"
@@ -356,6 +396,7 @@ export default function ManageBooks() {
           </div>
         </div>
       )}
+      <Toaster position="bottom-center" richColors />
     </AppLayout>
   );
 }

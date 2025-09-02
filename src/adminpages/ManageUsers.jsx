@@ -1,59 +1,66 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import AppLayout from "@/components/AppLayout";
 import { motion as Motion, AnimatePresence } from "framer-motion";
 import { X } from "lucide-react";
+import api from "@/lib/api";
+import { toast } from "sonner";
 
 export default function ManageUsers() {
-  const [users, setUsers] = useState([
-    {
-      id: 1,
-      name: "Temkin Abdulmelik",
-      studentId: "UGR/25555/14",
-      email: "temkinabd@gmail.com",
-      department: "Bio Medical",
-      currentBorrowed: 2,
-      totalBorrowed: 12,
-      status: "Pending",
-    },
-    {
-      id: 2,
-      name: "Tursina Yisehak",
-      studentId: "UGR/35555/15",
-      email: "tu@gmail.com",
-      department: "Bio Medical",
-      currentBorrowed: 2,
-      totalBorrowed: 12,
-      status: "Approved",
-    },
-    {
-      id: 3,
-      name: "Lina Temam",
-      studentId: "UGR/45555/14",
-      email: "linat@gmail.com",
-      department: "Computer Science",
-      currentBorrowed: 1,
-      totalBorrowed: 6,
-      status: "Rejected",
-    },
-  ]);
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let isMounted = true;
+    const load = async () => {
+      try {
+        setLoading(true);
+        const res = await api.get('/admin/users');
+        if (!isMounted) return;
+        // Normalize to existing UI fields
+        const mapped = res.data.map((u) => ({
+          id: u._id,
+          name: u.name,
+          studentId: u.studentId,
+          email: u.email,
+          department: u.department,
+          currentBorrowed: u.currentBorrowed ?? 0,
+          totalBorrowed: u.totalBorrowed ?? 0,
+          status: u.status ?? 'Pending',
+          role: u.role,
+        }));
+        setUsers(mapped);
+      } catch (e) {
+        console.error('Failed to load users', e);
+        toast.error(e.message || 'Failed to load users');
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    };
+    load();
+    return () => { isMounted = false; };
+  }, []);
 
   const [searchTerm, setSearchTerm] = useState("");
   const [departmentFilter, setDepartmentFilter] = useState("All Departments");
   const [statusFilter, setStatusFilter] = useState("All Status");
   const [selectedUser, setSelectedUser] = useState(null);
 
-  const handleApprove = (id) => {
-    setUsers((prev) =>
-      prev.map((u) => (u.id === id ? { ...u, status: "Approved" } : u))
-    );
+  // Optional: If you want approve/reject to reflect current month payment status,
+  // you can call payment update endpoints here attached to a specific payment record.
+  const handleApprove = async (id) => {
+    // For demo: update local status (admin list endpoint does not change server state)
+    setUsers((prev) => prev.map((u) => (u.id === id ? { ...u, status: 'Approved' } : u)));
+    toast.success('Marked as Approved (local)');
   };
-  const handleReject = (id) => {
-    setUsers((prev) =>
-      prev.map((u) => (u.id === id ? { ...u, status: "Rejected" } : u))
-    );
+  const handleReject = async (id) => {
+    setUsers((prev) => prev.map((u) => (u.id === id ? { ...u, status: 'Rejected' } : u)));
+    toast.success('Marked as Rejected (local)');
   };
-  const handleDelete = (id) =>
+  const handleDelete = async (id) => {
+    // No delete user endpoint defined; removing locally
     setUsers((prev) => prev.filter((u) => u.id !== id));
+    toast.success('Removed user from the list (local)');
+  };
 
   const filteredUsers = users.filter((u) => {
     const q = searchTerm.toLowerCase();
@@ -95,6 +102,9 @@ export default function ManageUsers() {
               </span>
             </div>
           </div>
+          {loading && (
+            <div className="text-gray-600">Loading users...</div>
+          )}
 
           <div className="flex flex-col md:flex-row gap-3 mb-6 bg-white/90 backdrop-blur-sm rounded-2xl border border-[#D9F3EA] p-4">
             <input
