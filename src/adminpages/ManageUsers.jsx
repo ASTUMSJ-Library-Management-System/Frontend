@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import AppLayout from "@/components/AppLayout";
 import { motion as Motion, AnimatePresence } from "framer-motion";
 import { X } from "lucide-react";
@@ -8,15 +8,20 @@ import { toast } from "sonner";
 export default function ManageUsers() {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [departmentFilter, setDepartmentFilter] = useState("All Departments");
+  const [statusFilter, setStatusFilter] = useState("All Status");
+  const [selectedUser, setSelectedUser] = useState(null);
 
+  // Load users
   useEffect(() => {
     let isMounted = true;
     const load = async () => {
       try {
         setLoading(true);
-        const res = await api.get('/admin/users');
+        const res = await api.get("/admin/users");
         if (!isMounted) return;
-        // Normalize to existing UI fields
+
         const mapped = res.data.map((u) => ({
           id: u._id,
           name: u.name,
@@ -25,42 +30,55 @@ export default function ManageUsers() {
           department: u.department,
           currentBorrowed: u.currentBorrowed ?? 0,
           totalBorrowed: u.totalBorrowed ?? 0,
-          status: u.status ?? 'Pending',
+          status: u.status ?? "Pending",
           role: u.role,
+          idPhotoUrl: u.idPhotoUrl || null,
         }));
+
         setUsers(mapped);
       } catch (e) {
-        console.error('Failed to load users', e);
-        toast.error(e.message || 'Failed to load users');
+        console.error("Failed to load users", e);
+        toast.error(e.message || "Failed to load users");
       } finally {
         if (isMounted) setLoading(false);
       }
     };
     load();
-    return () => { isMounted = false; };
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
-  const [searchTerm, setSearchTerm] = useState("");
-  const [departmentFilter, setDepartmentFilter] = useState("All Departments");
-  const [statusFilter, setStatusFilter] = useState("All Status");
-  const [selectedUser, setSelectedUser] = useState(null);
+  // --- API Updates ---
+  const updateUserStatus = async (id, status) => {
+    try {
+      await api.patch(`/admin/users/${id}/status`, { status });
+      setUsers((prev) => prev.map((u) => (u.id === id ? { ...u, status } : u)));
+      toast.success(`User marked as ${status}`);
+    } catch (e) {
+      console.error("Failed to update status", e);
+      toast.error(e.message || "Failed to update status");
+    }
+  };
 
-  // Optional: If you want approve/reject to reflect current month payment status,
-  // you can call payment update endpoints here attached to a specific payment record.
-  const handleApprove = async (id) => {
-    // For demo: update local status (admin list endpoint does not change server state)
-    setUsers((prev) => prev.map((u) => (u.id === id ? { ...u, status: 'Approved' } : u)));
-    toast.success('Marked as Approved (local)');
+  const deleteUser = async (id) => {
+    try {
+      await api.delete(`/admin/users/${id}`);
+      setUsers((prev) => prev.filter((u) => u.id !== id));
+      toast.success("User deleted successfully");
+    } catch (e) {
+      console.error("Failed to delete user", e);
+      toast.error(e.message || "Failed to delete user");
+    }
   };
-  const handleReject = async (id) => {
-    setUsers((prev) => prev.map((u) => (u.id === id ? { ...u, status: 'Rejected' } : u)));
-    toast.success('Marked as Rejected (local)');
-  };
-  const handleDelete = async (id) => {
-    // No delete user endpoint defined; removing locally
-    setUsers((prev) => prev.filter((u) => u.id !== id));
-    toast.success('Removed user from the list (local)');
-  };
+
+  // --- Filters ---
+  const departmentOptions = useMemo(() => {
+    const depts = Array.from(new Set(users.map((u) => u.department))).filter(
+      Boolean
+    );
+    return ["All Departments", ...depts];
+  }, [users]);
 
   const filteredUsers = users.filter((u) => {
     const q = searchTerm.toLowerCase();
@@ -102,9 +120,8 @@ export default function ManageUsers() {
               </span>
             </div>
           </div>
-          {loading && (
-            <div className="text-gray-600">Loading users...</div>
-          )}
+
+          {loading && <div className="text-gray-600">Loading users...</div>}
 
           <div className="flex flex-col md:flex-row gap-3 mb-6 bg-white/90 backdrop-blur-sm rounded-2xl border border-[#D9F3EA] p-4">
             <input
@@ -119,9 +136,9 @@ export default function ManageUsers() {
               onChange={(e) => setDepartmentFilter(e.target.value)}
               className="border border-[#A4F4CF] rounded-lg px-3 py-2 focus:ring-2 focus:ring-[#009966]"
             >
-              <option>All Departments</option>
-              <option>Bio Medical</option>
-              <option>Computer Science</option>
+              {departmentOptions.map((dept) => (
+                <option key={dept}>{dept}</option>
+              ))}
             </select>
             <select
               value={statusFilter}
@@ -154,12 +171,20 @@ export default function ManageUsers() {
                   {user.status}
                 </span>
                 <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-full bg-[#00A16B] flex items-center justify-center text-white font-bold">
-                    {user.name
-                      .split(" ")
-                      .map((n) => n[0])
-                      .join("")}
-                  </div>
+                  {user.idPhotoUrl ? (
+                    <img
+                      src={user.idPhotoUrl}
+                      alt="ID"
+                      className="w-12 h-12 rounded-full object-cover border"
+                    />
+                  ) : (
+                    <div className="w-12 h-12 rounded-full bg-[#00A16B] flex items-center justify-center text-white font-bold">
+                      {user.name
+                        .split(" ")
+                        .map((n) => n[0])
+                        .join("")}
+                    </div>
+                  )}
                   <div>
                     <h2 className="font-semibold text-lg text-[#082]">
                       {user.name}
@@ -179,16 +204,8 @@ export default function ManageUsers() {
                     {user.department}
                   </p>
                   <p>
-                    <span className="font-medium text-[#006045]">
-                      Currently Borrowed:
-                    </span>{" "}
-                    {user.currentBorrowed} books
-                  </p>
-                  <p>
-                    <span className="font-medium text-[#006045]">
-                      Total Borrowed:
-                    </span>{" "}
-                    {user.totalBorrowed} books
+                    <span className="font-medium text-[#006045]">Role:</span>{" "}
+                    {user.role}
                   </p>
                 </div>
                 <div className="flex gap-2 flex-wrap mt-4">
@@ -201,13 +218,13 @@ export default function ManageUsers() {
                   {user.status === "Pending" && (
                     <>
                       <button
-                        onClick={() => handleApprove(user.id)}
+                        onClick={() => updateUserStatus(user.id, "Approved")}
                         className="flex-1 bg-emerald-600 text-white px-3 py-2 rounded-lg hover:bg-emerald-700 transition"
                       >
                         Approve
                       </button>
                       <button
-                        onClick={() => handleReject(user.id)}
+                        onClick={() => updateUserStatus(user.id, "Rejected")}
                         className="flex-1 bg-red-500 text-white px-3 py-2 rounded-lg hover:bg-red-600 transition"
                       >
                         Reject
@@ -215,7 +232,7 @@ export default function ManageUsers() {
                     </>
                   )}
                   <button
-                    onClick={() => handleDelete(user.id)}
+                    onClick={() => deleteUser(user.id)}
                     className="w-full bg-red-600 text-white px-3 py-2 rounded-lg hover:bg-red-700 transition"
                   >
                     Delete Student
@@ -236,10 +253,6 @@ export default function ManageUsers() {
                 <div
                   onClick={() => setSelectedUser(null)}
                   className="absolute inset-0 bg-black/30 backdrop-blur-md"
-                  style={{
-                    backdropFilter: "blur(6px)",
-                    WebkitBackdropFilter: "blur(6px)",
-                  }}
                 />
                 <Motion.div
                   initial={{ scale: 0.9, opacity: 0 }}
@@ -250,27 +263,30 @@ export default function ManageUsers() {
                 >
                   <button
                     onClick={() => setSelectedUser(null)}
-                    aria-label="Close details"
                     className="absolute right-3 top-3 rounded-md p-1 text-gray-500 hover:text-gray-700 hover:bg-gray-100"
                   >
                     <X size={18} />
                   </button>
-                  <div className="flex items-center gap-3 mb-3">
-                    <div className="w-12 h-12 rounded-full bg-[#00A16B] flex items-center justify-center text-white font-bold">
-                      {selectedUser.name
-                        .split(" ")
-                        .map((n) => n[0])
-                        .join("")}
+
+                  {selectedUser.idPhotoUrl && (
+                    <div className="mb-4 flex justify-center">
+                      <img
+                        src={selectedUser.idPhotoUrl}
+                        alt="ID Photo"
+                        className="w-32 h-32 object-cover rounded-xl border"
+                      />
                     </div>
-                    <div>
-                      <h3 className="text-lg font-semibold text-[#006045]">
-                        {selectedUser.name}
-                      </h3>
-                      <p className="text-sm text-gray-500">
-                        {selectedUser.studentId}
-                      </p>
-                    </div>
+                  )}
+
+                  <div className="text-center mb-4">
+                    <h3 className="text-lg font-semibold text-[#006045]">
+                      {selectedUser.name}
+                    </h3>
+                    <p className="text-sm text-gray-500">
+                      {selectedUser.studentId}
+                    </p>
                   </div>
+
                   <div className="text-sm text-gray-700 space-y-2">
                     <p>
                       <span className="font-medium text-[#006045]">Email:</span>{" "}
@@ -281,6 +297,10 @@ export default function ManageUsers() {
                         Department:
                       </span>{" "}
                       {selectedUser.department}
+                    </p>
+                    <p>
+                      <span className="font-medium text-[#006045]">Role:</span>{" "}
+                      {selectedUser.role}
                     </p>
                     <p>
                       <span className="font-medium text-[#006045]">
@@ -301,6 +321,7 @@ export default function ManageUsers() {
                       {selectedUser.status}
                     </p>
                   </div>
+
                   <div className="flex justify-end mt-6">
                     <button
                       onClick={() => setSelectedUser(null)}

@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from "react";
-import { Search, Plus, Pencil, Trash, X } from "lucide-react";
+import React, { useEffect, useMemo, useState } from "react";
+import { Search, Plus, Pencil, Trash, X, ChevronDown } from "lucide-react";
 import { bookAPI } from "../lib/api";
 import AppLayout from "../components/AppLayout";
 import Pagination from "@/components/Pagination";
@@ -12,6 +12,7 @@ export default function ManageBooks() {
   const [category, setCategory] = useState("All");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingBook, setEditingBook] = useState(null);
+  const [expandedDesc, setExpandedDesc] = useState({}); // Read More / Read Less
 
   useEffect(() => {
     fetchBooks();
@@ -23,18 +24,35 @@ export default function ManageBooks() {
       const booksData = await bookAPI.getBooks();
       setBooks(booksData);
     } catch (error) {
-      toast.error(error.message);
+      toast.error(error.message || " Failed to fetch records.");
     } finally {
       setLoading(false);
     }
   };
 
+  const categoryOptions = useMemo(() => {
+    const map = new Map();
+    books.forEach((b) => {
+      const c = (b?.category || "").toString().trim();
+      if (c) {
+        const key = c.toLowerCase();
+        if (!map.has(key)) map.set(key, c);
+      }
+    });
+    const unique = Array.from(map.values()).sort((a, b) =>
+      a.localeCompare(b, undefined, { sensitivity: "base" })
+    );
+    return ["All", ...unique];
+  }, [books]);
+
   const filteredBooks = books.filter((book) => {
+    const needle = searchTerm.toLowerCase();
     const matchesSearch =
-      book.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      book.author.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (book.ISBN || book.isbn || "").toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = category === "All" || book.category === category;
+      (book.title || "").toLowerCase().includes(needle) ||
+      (book.author || "").toLowerCase().includes(needle) ||
+      ((book.ISBN || book.isbn || "") + "").toLowerCase().includes(needle);
+    const matchesCategory =
+      category === "All" || (book.category || "") === category;
     return matchesSearch && matchesCategory;
   });
 
@@ -86,16 +104,16 @@ export default function ManageBooks() {
 
     try {
       const fd = new FormData();
-      fd.append('title', title);
-      fd.append('author', author);
-      fd.append('ISBN', isbn);
-      fd.append('category', category);
-      fd.append('totalCopies', String(totalCopies));
-      fd.append('publicationYear', String(parseInt(year)));
-      fd.append('language', language);
-      fd.append('description', description);
+      fd.append("title", title);
+      fd.append("author", author);
+      fd.append("ISBN", isbn);
+      fd.append("category", category);
+      fd.append("totalCopies", String(totalCopies));
+      fd.append("publicationYear", String(parseInt(year)));
+      fd.append("language", language);
+      fd.append("description", description);
       if (imageFile && imageFile instanceof File && imageFile.size > 0) {
-        fd.append('image', imageFile);
+        fd.append("image", imageFile);
       }
 
       if (editingBook) {
@@ -142,42 +160,51 @@ export default function ManageBooks() {
         </button>
       </div>
 
-      <div className="flex flex-col md:flex-row gap-4 mb-6">
-        <div className="relative flex-1">
-          <Search className="absolute top-3 left-3 text-gray-400" size={18} />
-          <input
-            type="text"
-            placeholder="Search by Title, Author, or ISBN"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 border rounded-lg shadow-sm focus:ring focus:ring-green-300"
-          />
+      <div className="mb-8">
+        <div className="rounded-2xl border border-[#A4F4CF] bg-gradient-to-br from-[#EEFFF7] to-[#F7FFFB] p-3 sm:p-4 shadow-sm">
+          <div className="flex flex-col sm:flex-row items-stretch gap-3">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="Search by Title, Author, or ISBN"
+                className="w-full h-12 pl-9 pr-3 rounded-xl bg-white/90 ring-1 ring-inset ring-[#A4F4CF]/60
+                          focus:outline-none focus:ring-2 focus:ring-[#009966] placeholder:text-gray-400"
+              />
+            </div>
+
+            <div className="relative w-full sm:w-56">
+              <select
+                value={category}
+                onChange={(e) => setCategory(e.target.value)}
+                className="appearance-none w-full h-12 px-3 pr-9 rounded-xl bg-white/90 ring-1 ring-inset ring-[#A4F4CF]/60
+                           focus:outline-none focus:ring-2 focus:ring-[#009966] text-gray-700"
+              >
+                {categoryOptions.map((opt) => (
+                  <option key={opt} value={opt}>
+                    {opt}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+            </div>
+          </div>
         </div>
-        <select
-          value={category}
-          onChange={(e) => setCategory(e.target.value)}
-          className="px-4 py-2 border rounded-lg shadow-sm"
-        >
-          <option value="All">All Categories</option>
-          <option value="Hadith">Hadith</option>
-          <option value="History">History</option>
-          <option value="Poetry">Poetry</option>
-          <option value="Comparative Religion">Comparative Religion</option>
-          <option value="Quran">Quran</option>
-        </select>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredBooks.map((book) => (
           <div
             key={book._id}
-            className="bg-white rounded-xl shadow p-4 flex flex-col"
+            className="bg-white rounded-2xl shadow p-4 flex flex-col border border-gray-100"
           >
             <div className="flex justify-between items-start">
               <span
                 className={`px-3 py-1 text-xs font-semibold rounded-lg ${
                   book.availableCopies > 0
-                    ? "bg-green-100 text-green-600"
+                    ? "bg-green-100 text-green-700"
                     : "bg-red-100 text-red-600"
                 }`}
               >
@@ -188,23 +215,52 @@ export default function ManageBooks() {
               </span>
             </div>
 
-            <img
-              src={book.image || "https://via.placeholder.com/150"}
-              alt={book.title}
-              className="h-40 w-full object-contain my-3"
-            />
+            <div className="mt-3 mb-3 w-full">
+              <img
+                src={
+                  book.image ||
+                  "https://via.placeholder.com/300x400?text=No+Cover"
+                }
+                alt={book.title}
+                className="w-full h-44 object-contain"
+              />
+            </div>
 
-            <h2 className="text-lg font-semibold text-gray-800">
+            <h2 className="text-lg font-semibold text-gray-800 line-clamp-2">
               {book.title}
             </h2>
             <p className="text-sm text-gray-600">by {book.author}</p>
-            <p className="text-xs text-gray-500">Year: {book.publicationYear || book.year}</p>
-            <p className="text-xs text-gray-500">Language: {book.language}</p>
-            <p className="text-xs text-gray-500">Category: {book.category}</p>
-            <p className="text-xs text-gray-500">ISBN: {book.ISBN || book.isbn}</p>
-            <p className="text-sm text-gray-700 mt-2">{book.description}</p>
+            <div className="mt-1 grid grid-cols-2 gap-x-2 text-xs text-gray-500">
+              <span>Year: {book.publicationYear || book.year}</span>
+              <span>Lang: {book.language}</span>
+              <span className="col-span-2">Category: {book.category}</span>
+              <span className="col-span-2">ISBN: {book.ISBN || book.isbn}</span>
+            </div>
 
-            <div className="flex gap-2 mt-4">
+            {book.description && (
+              <p className="text-sm text-gray-700 mt-2">
+                {expandedDesc[book._id]
+                  ? book.description
+                  : book.description?.length > 140
+                  ? `${book.description.slice(0, 140)}...`
+                  : book.description}
+                {book.description?.length > 140 && (
+                  <button
+                    onClick={() =>
+                      setExpandedDesc((prev) => ({
+                        ...prev,
+                        [book._id]: !prev[book._id],
+                      }))
+                    }
+                    className="ml-1 text-[#009966] hover:underline font-medium"
+                  >
+                    {expandedDesc[book._id] ? "Read Less" : "Read More"}
+                  </button>
+                )}
+              </p>
+            )}
+
+            <div className="mt-auto pt-4 flex gap-2">
               <button
                 onClick={() => {
                   setEditingBook(book);
@@ -335,7 +391,9 @@ export default function ManageBooks() {
                   <input
                     name="year"
                     type="number"
-                    defaultValue={editingBook?.publicationYear || editingBook?.year || ""}
+                    defaultValue={
+                      editingBook?.publicationYear || editingBook?.year || ""
+                    }
                     required
                     min="1500"
                     max={new Date().getFullYear()}
@@ -380,7 +438,11 @@ export default function ManageBooks() {
                   className="border border-green-300 rounded-lg px-3 py-2 w-full focus:ring-2 focus:ring-green-400 focus:outline-none"
                 />
                 {editingBook?.image && (
-                  <img src={editingBook.image} alt="Current cover" className="mt-2 h-24 object-contain" />
+                  <img
+                    src={editingBook.image}
+                    alt="Current cover"
+                    className="mt-2 h-24 object-contain"
+                  />
                 )}
               </div>
 

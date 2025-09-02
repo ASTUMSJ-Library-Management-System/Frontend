@@ -21,7 +21,7 @@ const MembershipPayment = () => {
       setInitialLoading(true);
       const [paymentsData, paymentStatus] = await Promise.all([
         studentPaymentAPI.getMyPayments(),
-        studentPaymentAPI.checkPaymentStatus()
+        studentPaymentAPI.checkPaymentStatus(),
       ]);
       setPaymentHistory(paymentsData);
       setIsPaid(paymentStatus.isPaid);
@@ -33,11 +33,11 @@ const MembershipPayment = () => {
   };
 
   // Determine current status based on latest payment or subscription status
-  const currentStatus = isPaid 
-    ? "Active Subscription" 
-    : paymentHistory.length > 0 
-      ? paymentHistory[0].status 
-      : "Not Submitted";
+  const currentStatus = isPaid
+    ? "Active Subscription"
+    : paymentHistory.length > 0
+    ? paymentHistory[0].status
+    : "Not Submitted";
 
   const statusStyles = {
     Pending: "bg-[#FFE550CF] text-[#997B18]",
@@ -58,22 +58,20 @@ const MembershipPayment = () => {
     }
 
     // Do not block on client; backend enforces one approved payment per month
-
     setLoading(true);
 
     try {
       const formData = new FormData();
-      formData.append('screenshot', screenshot);
-      formData.append('reference', transactionRef);
+      formData.append("screenshot", screenshot);
+      formData.append("reference", transactionRef);
       if (notes) {
-        formData.append('notes', notes);
+        formData.append("notes", notes);
       }
 
       await studentPaymentAPI.submitPayment(formData);
-      
+
       toast.success("Payment proof submitted! Pending admin verification.");
 
-      // Reset form
       setScreenshot(null);
       setTransactionRef("");
       setNotes("");
@@ -101,7 +99,6 @@ const MembershipPayment = () => {
     <AppLayout>
       <div className="flex-1 min-h-screen bg-[#EDFDF7]">
         <div className="flex-1 w-full p-6 space-y-6 overflow-hidden">
-          {/* Page Title */}
           <div>
             <h1 className="text-2xl font-bold text-[#006045]">
               Membership Payment
@@ -111,7 +108,7 @@ const MembershipPayment = () => {
             </p>
           </div>
 
-          {/* Payment Status */}
+          {/* Status Card */}
           <div className="bg-[#FFFFFFCF] rounded-lg shadow-sm border border-gray-200 p-4">
             <h2 className="text-sm font-medium text-[16px] text-[#006045]">
               Payment Status
@@ -128,11 +125,13 @@ const MembershipPayment = () => {
             </div>
             {isPaid ? (
               <p className="text-sm text-green-600 mt-2">
-                ✅ Your payment is approved for this month. One approved payment covers a full month.
+                ✅ Your payment is approved for this month. One approved payment
+                covers a full month.
               </p>
-            ) : currentStatus === 'Rejected' ? (
+            ) : currentStatus === "Rejected" ? (
               <p className="text-sm text-red-600 mt-2">
-                Your last payment was rejected. You can submit a new payment for this month.
+                Your last payment was rejected. You can submit a new payment for
+                this month.
               </p>
             ) : null}
           </div>
@@ -249,9 +248,12 @@ const MembershipPayment = () => {
                   <span className="text-green-600 text-lg">✓</span>
                 </div>
                 <div>
-                  <h3 className="text-green-800 font-semibold">Active Subscription</h3>
+                  <h3 className="text-green-800 font-semibold">
+                    Active Subscription
+                  </h3>
                   <p className="text-green-700 text-sm">
-                    You have an approved membership payment for this month. You can now borrow up to 3 books from the library.
+                    You have an approved membership payment for this month. You
+                    can now borrow up to 3 books from the library.
                   </p>
                 </div>
               </div>
@@ -275,13 +277,15 @@ const MembershipPayment = () => {
                   >
                     <div>
                       <p className="text-sm font-semibold text-[#189966]">
-                        Membership Fee - {new Date(payment.createdAt).toLocaleString("default", {
+                        Membership Fee -{" "}
+                        {new Date(payment.createdAt).toLocaleString("default", {
                           month: "long",
                           year: "numeric",
                         })}
                       </p>
                       <p className="text-xs text-[#189966]">
-                        Submitted: {new Date(payment.createdAt).toLocaleDateString()}
+                        Submitted:{" "}
+                        {new Date(payment.createdAt).toLocaleDateString()}
                       </p>
                       {payment.reference && (
                         <p className="text-xs text-gray-500">

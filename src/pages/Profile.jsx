@@ -5,6 +5,7 @@ import { X } from "lucide-react";
 import AppLayout from "../components/AppLayout";
 import { useAuth } from "@/hooks/useAuth";
 import { motion as Motion, AnimatePresence } from "framer-motion";
+import { toast } from "sonner";
 
 const formatDate = (date) => {
   return new Date(date).toISOString().split("T")[0];
@@ -22,7 +23,6 @@ const CenterModal = ({ isOpen, onClose, title, children }) => {
         >
           <div className="absolute inset-0 bg-black/40" onClick={onClose}></div>
 
-          {/* Modal */}
           <Motion.div
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
@@ -65,6 +65,7 @@ export default function ProfilePage() {
     joinDate: user?.joinDate || today,
     membershipExpiry: user?.membershipExpiry || oneMonthLater,
     status: user?.status || "Pending",
+    photo: user?.photo || "",
   });
 
   const [password, setPassword] = useState({
@@ -76,17 +77,29 @@ export default function ProfilePage() {
   const handleProfileSave = (e) => {
     e.preventDefault();
     setEditOpen(false);
-    alert("Profile updated successfully!");
+
+    toast.success("Profile updated successfully!", {
+      description: "Your personal information has been saved.",
+      duration: 3000,
+    });
   };
 
   const handlePasswordSave = (e) => {
     e.preventDefault();
     if (password.newPassword !== password.confirm) {
-      alert("Passwords do not match!");
+      toast.error("Passwords do not match!", {
+        description: "Please make sure both new password fields are identical.",
+        duration: 3000,
+      });
       return;
     }
+
     setPasswordOpen(false);
-    alert("Password changed successfully!");
+
+    toast.success("Password changed successfully!", {
+      description: "You can now use your new password to log in.",
+      duration: 3000,
+    });
   };
 
   return (
@@ -110,9 +123,18 @@ export default function ProfilePage() {
             <div className="flex flex-col md:flex-row gap-10 md:gap-20">
               <div className="flex flex-col items-start gap-1">
                 <div className="flex items-center gap-4 mb-2">
-                  <div className="h-16 w-16 min-w-[64px] rounded-full bg-[#A4F4CF] flex items-center justify-center text-xl font-bold text-[#006045]">
-                    {profile.name?.charAt(0) || "U"}
-                  </div>
+                  {profile.photo ? (
+                    <img
+                      src={profile.photo}
+                      alt="Profile"
+                      className="h-16 w-16 rounded-full object-cover border-2 border-[#00A16B]"
+                    />
+                  ) : (
+                    <div className="h-16 w-16 min-w-[64px] rounded-full bg-[#A4F4CF] flex items-center justify-center text-xl font-bold text-[#006045]">
+                      {profile.name?.charAt(0) || "U"}
+                    </div>
+                  )}
+
                   <div className="flex flex-col">
                     <div className="font-medium text-gray-900">
                       {profile.name}
@@ -184,12 +206,34 @@ export default function ProfilePage() {
         </Card>
       </div>
 
+      {/* Edit Profile Modal */}
       <CenterModal
         isOpen={editOpen}
         onClose={() => setEditOpen(false)}
         title="Edit Profile"
       >
         <form onSubmit={handleProfileSave} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700">
+              Profile Photo
+            </label>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={(e) => {
+                const file = e.target.files[0];
+                if (file) {
+                  const reader = new FileReader();
+                  reader.onloadend = () => {
+                    setProfile({ ...profile, photo: reader.result });
+                  };
+                  reader.readAsDataURL(file);
+                }
+              }}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+            />
+          </div>
+
           <div>
             <label className="block text-sm font-medium text-gray-700">
               Name
@@ -250,6 +294,7 @@ export default function ProfilePage() {
         </form>
       </CenterModal>
 
+      {/* Change Password Modal */}
       <CenterModal
         isOpen={passwordOpen}
         onClose={() => setPasswordOpen(false)}

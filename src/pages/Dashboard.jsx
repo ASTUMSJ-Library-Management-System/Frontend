@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import AppLayout from "../components/AppLayout";
-import { BookOpen, Library, CreditCard, User, Home } from "lucide-react";
+import { BookOpen, Library, CreditCard, User } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import api from "@/lib/api";
@@ -39,12 +39,6 @@ export default function Dashboard() {
 
   const adminActions = [
     {
-      to: "/admin/dashboard",
-      label: "Dashboard",
-      desc: "Overview & stats",
-      icon: Home,
-    },
-    {
       to: "/admin/managebooks",
       label: "Manage Books",
       desc: "Add, edit, or remove books",
@@ -78,20 +72,89 @@ export default function Dashboard() {
     const fetchData = async () => {
       try {
         if (isAdmin) {
-          const res = await api.get('/admin/stats');
-          if (isMounted) setAdminStats(res.data);
+          const res = await api.get("/admin/stats");
+          if (isMounted) {
+            const data = res.data;
+            const uniqueBooks = new Set(
+              (data.books ?? [])
+                .filter((b) => b.availableCopies > 0)
+                .map((b) => b.id)
+            ).size;
+            const totalAvailableCopies = (data.books ?? []).reduce(
+              (sum, b) => sum + (b.availableCopies || 0),
+              0
+            );
+            setAdminStats({
+              ...data,
+              availableBooks: uniqueBooks,
+              availableCopies: totalAvailableCopies,
+            });
+          }
         } else {
-          const res = await api.get('/user/me/summary');
-          if (isMounted) setMemberSummary(res.data);
+          const res = await api.get("/user/me/summary");
+          if (isMounted) {
+            const data = res.data;
+            const uniqueBooks = new Set(
+              (data.books ?? [])
+                .filter((b) => b.availableCopies > 0)
+                .map((b) => b.id)
+            ).size;
+            const totalAvailableCopies = (data.books ?? []).reduce(
+              (sum, b) => sum + (b.availableCopies || 0),
+              0
+            );
+            setMemberSummary({
+              ...data,
+              availableBooks: uniqueBooks,
+              availableCopies: totalAvailableCopies,
+            });
+          }
         }
       } catch (e) {
-        // optionally handle with a toast
-        console.error('Dashboard fetch error', e);
+        console.error("Dashboard fetch error", e);
       }
     };
     fetchData();
-    return () => { isMounted = false; };
+    return () => {
+      isMounted = false;
+    };
   }, [isAdmin]);
+
+  const renderPaymentBanner = () => {
+    const status = memberSummary?.payment?.status ?? "Unknown";
+    if (status === "Pending") {
+      return (
+        <div className="bg-yellow-100 border-l-4 border-yellow-400 text-yellow-800 p-4 mt-4 rounded-md text-sm md:text-base">
+          Your membership payment is{" "}
+          <span className="font-semibold">Pending</span>. Please wait for admin
+          approval.
+        </div>
+      );
+    }
+    if (status === "Rejected") {
+      return (
+        <div className="bg-red-100 border-l-4 border-red-500 text-red-800 p-4 mt-4 rounded-md text-sm md:text-base">
+          Your membership payment was{" "}
+          <span className="font-semibold">Rejected</span>. Please contact the
+          library or try again.
+        </div>
+      );
+    }
+    if (status === "Approved") {
+      return (
+        <div className="bg-green-100 border-l-4 border-green-500 text-green-800 p-4 mt-4 rounded-md text-sm md:text-base">
+          Your membership payment has been{" "}
+          <span className="font-semibold">Approved</span>. Enjoy borrowing
+          books!
+        </div>
+      );
+    }
+    return (
+      <div className="bg-gray-100 border-l-4 border-gray-400 text-gray-800 p-4 mt-4 rounded-md text-sm md:text-base">
+        Payment status unknown. Please check your account.
+      </div>
+    );
+  };
 
   return (
     <AppLayout>
@@ -104,45 +167,70 @@ export default function Dashboard() {
           : "Welcome back, Student! Manage your library activities here."}
       </p>
 
+      {/* Admin Dashboard */}
       {isAdmin ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
           <div className="bg-white p-5 rounded-xl shadow-md">
             <p className="text-gray-500">Total Users</p>
-            <h2 className="text-2xl font-bold text-[#009966]">{adminStats?.totalUsers ?? '--'}</h2>
+            <h2 className="text-2xl font-bold text-[#009966]">
+              {adminStats?.totalUsers ?? "--"}
+            </h2>
           </div>
           <div className="bg-white p-5 rounded-xl shadow-md">
-            <p className="text-gray-500">Books Available</p>
-            <h2 className="text-2xl font-bold text-[#009966]">{adminStats?.availableBooks ?? '--'}</h2>
+            <p className="text-gray-500">Available Books</p>
+            <h2 className="text-2xl font-bold text-[#009966]">
+              {adminStats?.availableBooks ?? "--"}
+            </h2>
+          </div>
+          <div className="bg-white p-5 rounded-xl shadow-md">
+            <p className="text-gray-500">Available Copies</p>
+            <h2 className="text-2xl font-bold text-[#009966]">
+              {adminStats?.availableCopies ?? "--"}
+            </h2>
           </div>
           <div className="bg-white p-5 rounded-xl shadow-md">
             <p className="text-gray-500">Pending Payments</p>
             <span className="bg-yellow-200 text-yellow-800 px-2 py-1 rounded text-sm font-semibold">
-              {adminStats?.pendingPayments ?? '--'} Requests
+              {adminStats?.pendingPayments ?? "--"} Requests
             </span>
           </div>
         </div>
       ) : (
+        // Student Dashboard
         <div>
-          <div className="bg-yellow-100 border-l-4 border-yellow-400 text-yellow-800 p-4 mt-4 rounded-md text-sm md:text-base">
-            Your membership payment is{" "}
-            <span className="font-semibold">{memberSummary?.payment?.status ?? 'Unknown'}</span>. Please wait for
-            admin approval.
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-6">
+          {renderPaymentBanner()}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
             <div className="bg-white p-5 rounded-xl shadow-md">
               <p className="text-gray-500">Books Borrowed</p>
-              <h2 className="text-2xl font-bold text-[#009966]">{memberSummary?.booksBorrowed ?? '--'}</h2>
+              <h2 className="text-2xl font-bold text-[#009966]">
+                {memberSummary?.booksBorrowed ?? "--"}
+              </h2>
             </div>
             <div className="bg-white p-5 rounded-xl shadow-md">
               <p className="text-gray-500">Payment Status</p>
-              <span className="bg-yellow-200 text-yellow-800 px-2 py-1 rounded text-sm font-semibold">
-                {memberSummary?.payment?.status ?? 'Unknown'}
+              <span
+                className={`px-2 py-1 rounded text-sm font-semibold ${
+                  memberSummary?.payment?.status === "Approved"
+                    ? "bg-green-200 text-green-800"
+                    : memberSummary?.payment?.status === "Rejected"
+                    ? "bg-red-200 text-red-800"
+                    : "bg-yellow-200 text-yellow-800"
+                }`}
+              >
+                {memberSummary?.payment?.status ?? "Unknown"}
               </span>
             </div>
             <div className="bg-white p-5 rounded-xl shadow-md">
               <p className="text-gray-500">Available Books</p>
-              <h2 className="text-2xl font-bold text-[#009966]">{memberSummary?.availableBooks ?? '--'}</h2>
+              <h2 className="text-2xl font-bold text-[#009966]">
+                {memberSummary?.availableBooks ?? "--"}
+              </h2>
+            </div>
+            <div className="bg-white p-5 rounded-xl shadow-md">
+              <p className="text-gray-500">Available Copies</p>
+              <h2 className="text-2xl font-bold text-[#009966]">
+                {memberSummary?.availableCopies ?? "--"}
+              </h2>
             </div>
           </div>
 
@@ -150,20 +238,33 @@ export default function Dashboard() {
             <h2 className="text-lg font-semibold text-[#009966] mb-4">
               Currently Borrowed Books
             </h2>
-
             {(memberSummary?.currentBorrows?.length ?? 0) === 0 ? (
               <div className="text-gray-600">No active borrowed books.</div>
             ) : (
               memberSummary.currentBorrows.map((b) => (
                 <div key={b.id} className="border-b border-gray-200 pb-4 mb-4">
-                  <p className="font-medium">{b.book?.title ?? 'Unknown Title'}</p>
-                  <p className="text-sm text-gray-600">by {b.book?.author ?? 'Unknown Author'}</p>
-                  <p className="text-xs text-gray-500">Borrowed: {new Date(b.borrowDate).toLocaleDateString()}</p>
+                  <p className="font-medium">
+                    {b.book?.title ?? "Unknown Title"}
+                  </p>
+                  <p className="text-sm text-gray-600">
+                    by {b.book?.author ?? "Unknown Author"}
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    Borrowed: {new Date(b.borrowDate).toLocaleDateString()}
+                  </p>
                   <div className="flex justify-between mt-2">
-                    <span className={`px-2 py-1 rounded text-xs font-semibold ${b.status === 'Overdue' ? 'bg-red-200 text-red-800' : 'bg-yellow-200 text-yellow-800'}`}>
+                    <span
+                      className={`px-2 py-1 rounded text-xs font-semibold ${
+                        b.status === "Overdue"
+                          ? "bg-red-200 text-red-800"
+                          : "bg-yellow-200 text-yellow-800"
+                      }`}
+                    >
                       {b.status}
                     </span>
-                    <span className="text-sm text-gray-600">Due: {new Date(b.dueDate).toLocaleDateString()}</span>
+                    <span className="text-sm text-gray-600">
+                      Due: {new Date(b.dueDate).toLocaleDateString()}
+                    </span>
                   </div>
                 </div>
               ))
