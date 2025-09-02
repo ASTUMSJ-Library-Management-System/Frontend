@@ -22,7 +22,7 @@ export default function BorrowingRecords() {
       const borrowData = await borrowAPI.getBorrows();
       setRecords(borrowData);
     } catch (error) {
-      toast.error(error.message || "⚠️ Failed to fetch records.");
+      toast.error(error.message || " Failed to fetch records.");
     } finally {
       setLoading(false);
     }
@@ -32,7 +32,7 @@ export default function BorrowingRecords() {
     try {
       await borrowAPI.approveReturn(recordId);
       await fetchBorrowRecords();
-      toast.success("Return approved.");
+      toast.success(" Return approved.");
     } catch (error) {
       toast.error(error.message);
     }
@@ -42,7 +42,7 @@ export default function BorrowingRecords() {
     try {
       await borrowAPI.declineReturn(recordId);
       await fetchBorrowRecords();
-      toast.warning("Return request declined.");
+      toast.warning(" Return request declined.");
     } catch (error) {
       toast.error(error.message);
     }
@@ -52,13 +52,13 @@ export default function BorrowingRecords() {
     try {
       await borrowAPI.markAsReturned(recordId);
       await fetchBorrowRecords();
-      toast.success("Book marked as returned.");
+      toast.success("📦 Book marked as returned.");
     } catch (error) {
       toast.error(error.message);
     }
   };
 
-  // Status Colors
+  //  Status Colors
   const statusColors = {
     Active: "bg-blue-100 text-blue-600",
     Pending: "bg-yellow-100 text-yellow-600",
@@ -132,21 +132,21 @@ export default function BorrowingRecords() {
 
           <div className="bg-[#FFFDF5] p-3 rounded-lg space-y-1 mt-3">
             <p>
-              <span className="font-semibold">📅 Borrowed:</span>{" "}
+              <span className="font-semibold"> Borrowed:</span>{" "}
               {new Date(record.borrowDate).toLocaleDateString()}
             </p>
             <p>
-              <span className="font-semibold">📅 Due:</span>{" "}
+              <span className="font-semibold"> Due:</span>{" "}
               {new Date(record.dueDate).toLocaleDateString()}
             </p>
             {record.status === "Returned" && (
               <p>
-                <span className="font-semibold">✅ Returned:</span>{" "}
+                <span className="font-semibold"> Returned:</span>{" "}
                 {new Date(record.updatedAt).toLocaleDateString()}
               </p>
             )}
             <p>
-              <span className="font-semibold">📌 Status:</span>{" "}
+              <span className="font-semibold"> Status:</span>{" "}
               <span
                 className={`px-2 py-1 rounded-full text-xs font-medium ${
                   statusColors[record.status] || "bg-gray-100 text-gray-800"

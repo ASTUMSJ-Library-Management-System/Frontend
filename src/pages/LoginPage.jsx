@@ -79,7 +79,6 @@ export default function LoginPage() {
           </CardHeader>
 
           <CardContent>
-            {/* Normal login form */}
             {!showForgot && (
               <form onSubmit={handleSubmit} className="space-y-6">
                 {/* Email */}

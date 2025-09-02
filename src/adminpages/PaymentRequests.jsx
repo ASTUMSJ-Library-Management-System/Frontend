@@ -36,7 +36,7 @@ export default function PaymentsPage() {
       console.log("Fetched payments data:", paymentsData);
       setPayments(paymentsData);
     } catch (error) {
-      toast.error(error.message || " Failed to fetch records.");
+      toast.error(error.message || "Failed to fetch records.");
     } finally {
       setLoading(false);
     }
@@ -48,13 +48,14 @@ export default function PaymentsPage() {
       await fetchPayments();
       toast.success(`Payment ${newStatus.toLowerCase()} successfully!`);
     } catch (error) {
-      toast.error(error.message);
+      toast.error(error.message || "Failed to update status.");
     }
   };
 
   const pendingRequests = payments.filter(
     (payment) => payment.status === "Pending"
   );
+
   const allRequests = payments;
 
   const handleReviewClick = (payment) => {
@@ -157,16 +158,15 @@ export default function PaymentsPage() {
                 allRequests.map((request) => (
                   <div
                     key={request._id}
-                    className={`flex items-center justify-between p-4 rounded-lg shadow-sm bg-[#ECFDF5] 
-                      ${
-                        request.status === "Pending"
-                          ? "bg-[#FFE550CF] border-[#FAD91C] font-semibold text-[#997B18]"
-                          : request.status === "Approved"
-                          ? "bg-[#C9FAE3] text-[#189966] font-semibold border-[#A4F4CF]"
-                          : request.status === "Rejected"
-                          ? "bg-[#FFB7B4CF] text-[#C3090C] font-semibold border-[#FAD91C]"
-                          : ""
-                      } border`}
+                    className={`flex items-center justify-between p-4 rounded-lg shadow-sm ${
+                      request.status === "Pending"
+                        ? "bg-[#FFE550CF] border-[#FAD91C] font-semibold text-[#997B18]"
+                        : request.status === "Approved"
+                        ? "bg-[#C9FAE3] text-[#189966] font-semibold border-[#A4F4CF]"
+                        : request.status === "Rejected"
+                        ? "bg-[#FFB7B4CF] text-[#C3090C] font-semibold border-[#FAD91C]"
+                        : ""
+                    }`}
                   >
                     <div
                       className={`flex flex-col gap-1 text-sm ${

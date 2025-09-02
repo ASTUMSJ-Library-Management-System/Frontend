@@ -94,7 +94,9 @@ export default function Sidebar({ isOpen = false, onClose = () => {} }) {
       <div>
         <div className="flex flex-col gap-1 p-3 rounded-md border border-green-200 bg-[#ECFDF5] text-sm mb-3">
           <p className="font-semibold text-green-700">{user?.name || "User"}</p>
-          <p className="text-gray-700">{user?.email || "user@example.com"}</p>
+          <p className="text-gray-700 break-words">
+            {user?.email || "user@example.com"}
+          </p>
           <p>
             Role:{" "}
             <span className="text-green-600 font-medium capitalize">

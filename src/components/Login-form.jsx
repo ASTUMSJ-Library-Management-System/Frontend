@@ -20,7 +20,7 @@ export function RegisterForm({ className, ...props }) {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [department, setDepartment] = useState("");
-  const [showPassword, setShowPassword] = useState(false); //  toggle password
+  const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const navigate = useNavigate();
@@ -45,9 +45,19 @@ export function RegisterForm({ className, ...props }) {
     setError("");
     setSuccess("");
 
+    const formData = new FormData();
+    formData.append("name", data.name);
+    formData.append("email", data.email);
+    formData.append("department", department);
+    formData.append("password", data.password);
+
+    // Append the ID picture file.
+    if (data.idPicture && data.idPicture[0]) {
+      formData.append("idPicture", data.idPicture[0]);
+    }
+
     try {
-      const userData = { ...data, department };
-      const result = await registerUser(userData);
+      const result = await registerUser(formData);
 
       if (result.success) {
         setSuccess("Registration successful! Redirecting to dashboard...");
@@ -76,7 +86,7 @@ export function RegisterForm({ className, ...props }) {
       <Card className="shadow-lg border-0">
         <CardHeader className="text-center">
           <div className="flex justify-center mb-4">
-            <div className="h-20 w-20 flex items-center justify-center rounded-full bg-green-600 shadow-lg">
+            <div className="h-20 w-20 flex items-center justify-center rounded-full bg-[#009966] shadow-lg">
               <img src="/Frame.png" alt="Logo" className="h-12 w-12" />
             </div>
           </div>
@@ -143,28 +153,6 @@ export function RegisterForm({ className, ...props }) {
                 )}
               </div>
 
-              {/* Student ID */}
-              <div className="grid gap-2">
-                <Label htmlFor="studentId">Student ID</Label>
-                <Input
-                  id="studentId"
-                  type="text"
-                  placeholder="Enter your Student ID"
-                  {...register("studentId", {
-                    required: "Student ID is required",
-                    minLength: {
-                      value: 5,
-                      message: "Student ID must be at least 5 characters",
-                    },
-                  })}
-                />
-                {errors.studentId && (
-                  <p className="text-red-500 text-xs">
-                    {errors.studentId.message}
-                  </p>
-                )}
-              </div>
-
               {/* Department */}
               <div className="grid gap-2">
                 <Label htmlFor="department">Department</Label>
@@ -180,8 +168,23 @@ export function RegisterForm({ className, ...props }) {
                     </option>
                   ))}
                 </select>
-                {errors.department && (
-                  <p className="text-red-500 text-xs">Department is required</p>
+              </div>
+
+              {/* ID Picture */}
+              <div className="grid gap-2">
+                <Label htmlFor="idPicture">Upload ID Picture</Label>
+                <Input
+                  id="idPicture"
+                  type="file"
+                  accept="image/*"
+                  {...register("idPicture", {
+                    required: "ID picture is required",
+                  })}
+                />
+                {errors.idPicture && (
+                  <p className="text-red-500 text-xs">
+                    {errors.idPicture.message}
+                  </p>
                 )}
               </div>
 
@@ -249,7 +252,7 @@ export function RegisterForm({ className, ...props }) {
             <Button
               type="submit"
               disabled={isLoading}
-              className="w-full bg-green-600 hover:bg-green-700 disabled:bg-green-400 disabled:cursor-not-allowed"
+              className="w-full bg-[#009966] hover:bg-[#007a52] text-white rounded-md disabled:cursor-not-allowed"
             >
               {isLoading ? "Creating Account..." : "Create Account"}
             </Button>

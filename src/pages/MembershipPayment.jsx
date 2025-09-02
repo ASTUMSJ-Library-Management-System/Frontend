@@ -32,7 +32,6 @@ const MembershipPayment = () => {
     }
   };
 
-  // Determine current status based on latest payment or subscription status
   const currentStatus = isPaid
     ? "Active Subscription"
     : paymentHistory.length > 0
@@ -57,26 +56,21 @@ const MembershipPayment = () => {
       return;
     }
 
-    // Do not block on client; backend enforces one approved payment per month
     setLoading(true);
 
     try {
       const formData = new FormData();
       formData.append("screenshot", screenshot);
       formData.append("reference", transactionRef);
-      if (notes) {
-        formData.append("notes", notes);
-      }
+      if (notes) formData.append("notes", notes);
 
       await studentPaymentAPI.submitPayment(formData);
-
       toast.success("Payment proof submitted! Pending admin verification.");
 
       setScreenshot(null);
       setTransactionRef("");
       setNotes("");
 
-      // Refresh payment data
       await fetchPaymentData();
     } catch (error) {
       toast.error(error.message);
@@ -99,6 +93,7 @@ const MembershipPayment = () => {
     <AppLayout>
       <div className="flex-1 min-h-screen bg-[#EDFDF7]">
         <div className="flex-1 w-full p-6 space-y-6 overflow-hidden">
+          {/* Header */}
           <div>
             <h1 className="text-2xl font-bold text-[#006045]">
               Membership Payment
@@ -178,7 +173,7 @@ const MembershipPayment = () => {
             </p>
           </div>
 
-          {/* Submit Payment Proof - Only hide if an approved payment exists this month */}
+          {/* Submit Payment Proof */}
           {!isPaid && (
             <div className="bg-[#FFFFFFCF] rounded-lg shadow-sm border border-gray-200 p-4 space-y-4">
               <h2 className="text-sm font-semibold text-[#006045] text-[20px]">

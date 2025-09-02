@@ -111,6 +111,7 @@ export default function MyBooks() {
     <AppLayout>
       <Toaster position="top-right" richColors closeButton />
 
+      {/* Header & Status Filters */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-5">
         <h1 className="text-3xl font-bold text-[#009966]">Borrowed Books</h1>
         <div className="flex flex-wrap items-center gap-2">
@@ -136,6 +137,7 @@ export default function MyBooks() {
         </div>
       </div>
 
+      {/* Search & Status Dropdown */}
       <div className="mb-8">
         <div className="rounded-2xl border border-[#A4F4CF] bg-gradient-to-br from-[#EEFFF7] to-[#F7FFFB] p-3 sm:p-4 shadow-sm">
           <div className="flex flex-col sm:flex-row items-stretch gap-3">
@@ -176,7 +178,7 @@ export default function MyBooks() {
         </p>
       )}
 
-      {/* Books grid */}
+      {/* Books Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         <AnimatePresence>
           {filteredBooks.map((book) => (

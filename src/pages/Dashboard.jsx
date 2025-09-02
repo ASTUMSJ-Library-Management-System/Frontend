@@ -5,6 +5,65 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import api from "@/lib/api";
 
+// Reusable Components
+const StatCard = ({ title, value, color = "green", extra }) => {
+  const bgColor = {
+    green: "bg-green-100 text-green-800",
+    red: "bg-red-100 text-red-800",
+    yellow: "bg-yellow-100 text-yellow-800",
+    gray: "bg-gray-100 text-gray-800",
+  }[color];
+
+  return (
+    <div className="bg-white p-5 rounded-xl shadow-md">
+      <p className="text-gray-500">{title}</p>
+      <h2 className="text-2xl font-bold text-[#009966]">{value ?? "--"}</h2>
+      {extra && (
+        <div className={`${bgColor} px-2 py-1 rounded text-sm font-semibold`}>
+          {extra}
+        </div>
+      )}
+    </div>
+  );
+};
+
+const ActionCard = ({ icon: Icon, label, desc, onClick }) => (
+  <button
+    onClick={onClick}
+    className="group bg-white p-5 rounded-xl shadow-md text-center hover:bg-[#009966] hover:text-white transition transform hover:scale-105"
+  >
+    <Icon className="w-8 h-8 text-[#009966] mx-auto mb-2 group-hover:text-white" />
+    <p className="font-medium">{label}</p>
+    <p className="text-sm">{desc}</p>
+  </button>
+);
+
+const BorrowedBookCard = ({ book }) => (
+  <div className="border-b border-gray-200 pb-4 mb-4">
+    <p className="font-medium">{book.book?.title ?? "Unknown Title"}</p>
+    <p className="text-sm text-gray-600">
+      by {book.book?.author ?? "Unknown Author"}
+    </p>
+    <p className="text-xs text-gray-500">
+      Borrowed: {new Date(book.borrowDate).toLocaleDateString()}
+    </p>
+    <div className="flex justify-between mt-2">
+      <span
+        className={`px-2 py-1 rounded text-xs font-semibold ${
+          book.status === "Overdue"
+            ? "bg-red-200 text-red-800"
+            : "bg-yellow-200 text-yellow-800"
+        }`}
+      >
+        {book.status}
+      </span>
+      <span className="text-sm text-gray-600">
+        Due: {new Date(book.dueDate).toLocaleDateString()}
+      </span>
+    </div>
+  </div>
+);
+
 export default function Dashboard() {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -66,11 +125,13 @@ export default function Dashboard() {
 
   const [adminStats, setAdminStats] = useState(null);
   const [memberSummary, setMemberSummary] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let isMounted = true;
     const fetchData = async () => {
       try {
+        setLoading(true);
         if (isAdmin) {
           const res = await api.get("/admin/stats");
           if (isMounted) {
@@ -112,6 +173,8 @@ export default function Dashboard() {
         }
       } catch (e) {
         console.error("Dashboard fetch error", e);
+      } finally {
+        setLoading(false);
       }
     };
     fetchData();
@@ -122,39 +185,36 @@ export default function Dashboard() {
 
   const renderPaymentBanner = () => {
     const status = memberSummary?.payment?.status ?? "Unknown";
-    if (status === "Pending") {
-      return (
-        <div className="bg-yellow-100 border-l-4 border-yellow-400 text-yellow-800 p-4 mt-4 rounded-md text-sm md:text-base">
-          Your membership payment is{" "}
-          <span className="font-semibold">Pending</span>. Please wait for admin
-          approval.
-        </div>
-      );
-    }
-    if (status === "Rejected") {
-      return (
-        <div className="bg-red-100 border-l-4 border-red-500 text-red-800 p-4 mt-4 rounded-md text-sm md:text-base">
-          Your membership payment was{" "}
-          <span className="font-semibold">Rejected</span>. Please contact the
-          library or try again.
-        </div>
-      );
-    }
-    if (status === "Approved") {
-      return (
-        <div className="bg-green-100 border-l-4 border-green-500 text-green-800 p-4 mt-4 rounded-md text-sm md:text-base">
-          Your membership payment has been{" "}
-          <span className="font-semibold">Approved</span>. Enjoy borrowing
-          books!
-        </div>
-      );
-    }
+    const statusColors = {
+      Approved: "bg-green-100 border-green-500 text-green-800",
+      Pending: "bg-yellow-100 border-yellow-400 text-yellow-800",
+      Rejected: "bg-red-100 border-red-500 text-red-800",
+      Unknown: "bg-gray-100 border-gray-400 text-gray-800",
+    };
+    const className = statusColors[status] || statusColors.Unknown;
+
     return (
-      <div className="bg-gray-100 border-l-4 border-gray-400 text-gray-800 p-4 mt-4 rounded-md text-sm md:text-base">
-        Payment status unknown. Please check your account.
+      <div
+        className={`${className} border-l-4 p-4 mt-4 rounded-md text-sm md:text-base`}
+      >
+        Your membership payment is{" "}
+        <span className="font-semibold">{status}</span>.
+        {status === "Pending" && " Please wait for admin approval."}
+        {status === "Rejected" && " Please contact the library or try again."}
+        {status === "Approved" && " Enjoy borrowing books!"}
       </div>
     );
   };
+
+  if (loading) {
+    return (
+      <AppLayout>
+        <div className="flex justify-center items-center h-64 text-lg text-gray-500">
+          Loading dashboard...
+        </div>
+      </AppLayout>
+    );
+  }
 
   return (
     <AppLayout>
@@ -167,73 +227,54 @@ export default function Dashboard() {
           : "Welcome back, Student! Manage your library activities here."}
       </p>
 
-      {/* Admin Dashboard */}
+      {/* Stats */}
       {isAdmin ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
-          <div className="bg-white p-5 rounded-xl shadow-md">
-            <p className="text-gray-500">Total Users</p>
-            <h2 className="text-2xl font-bold text-[#009966]">
-              {adminStats?.totalUsers ?? "--"}
-            </h2>
-          </div>
-          <div className="bg-white p-5 rounded-xl shadow-md">
-            <p className="text-gray-500">Available Books</p>
-            <h2 className="text-2xl font-bold text-[#009966]">
-              {adminStats?.availableBooks ?? "--"}
-            </h2>
-          </div>
-          <div className="bg-white p-5 rounded-xl shadow-md">
-            <p className="text-gray-500">Available Copies</p>
-            <h2 className="text-2xl font-bold text-[#009966]">
-              {adminStats?.availableCopies ?? "--"}
-            </h2>
-          </div>
-          <div className="bg-white p-5 rounded-xl shadow-md">
-            <p className="text-gray-500">Pending Payments</p>
-            <span className="bg-yellow-200 text-yellow-800 px-2 py-1 rounded text-sm font-semibold">
-              {adminStats?.pendingPayments ?? "--"} Requests
-            </span>
-          </div>
+          <StatCard title="Total Users" value={adminStats?.totalUsers} />
+          <StatCard
+            title="Available Books"
+            value={adminStats?.availableBooks}
+          />
+          <StatCard
+            title="Available Copies"
+            value={adminStats?.availableCopies}
+          />
+          <StatCard
+            title="Pending Payments"
+            value={adminStats?.pendingPayments}
+            color="yellow"
+          />
         </div>
       ) : (
-        // Student Dashboard
         <div>
           {renderPaymentBanner()}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
-            <div className="bg-white p-5 rounded-xl shadow-md">
-              <p className="text-gray-500">Books Borrowed</p>
-              <h2 className="text-2xl font-bold text-[#009966]">
-                {memberSummary?.booksBorrowed ?? "--"}
-              </h2>
-            </div>
-            <div className="bg-white p-5 rounded-xl shadow-md">
-              <p className="text-gray-500">Payment Status</p>
-              <span
-                className={`px-2 py-1 rounded text-sm font-semibold ${
-                  memberSummary?.payment?.status === "Approved"
-                    ? "bg-green-200 text-green-800"
-                    : memberSummary?.payment?.status === "Rejected"
-                    ? "bg-red-200 text-red-800"
-                    : "bg-yellow-200 text-yellow-800"
-                }`}
-              >
-                {memberSummary?.payment?.status ?? "Unknown"}
-              </span>
-            </div>
-            <div className="bg-white p-5 rounded-xl shadow-md">
-              <p className="text-gray-500">Available Books</p>
-              <h2 className="text-2xl font-bold text-[#009966]">
-                {memberSummary?.availableBooks ?? "--"}
-              </h2>
-            </div>
-            <div className="bg-white p-5 rounded-xl shadow-md">
-              <p className="text-gray-500">Available Copies</p>
-              <h2 className="text-2xl font-bold text-[#009966]">
-                {memberSummary?.availableCopies ?? "--"}
-              </h2>
-            </div>
+            <StatCard
+              title="Books Borrowed"
+              value={memberSummary?.booksBorrowed}
+            />
+            <StatCard
+              title="Payment Status"
+              value={memberSummary?.payment?.status ?? "Unknown"}
+              color={
+                memberSummary?.payment?.status === "Approved"
+                  ? "green"
+                  : memberSummary?.payment?.status === "Rejected"
+                  ? "red"
+                  : "yellow"
+              }
+            />
+            <StatCard
+              title="Available Books"
+              value={memberSummary?.availableBooks}
+            />
+            <StatCard
+              title="Available Copies"
+              value={memberSummary?.availableCopies}
+            />
           </div>
 
+          {/* Borrowed Books */}
           <div className="bg-white p-6 rounded-xl shadow-md mt-6">
             <h2 className="text-lg font-semibold text-[#009966] mb-4">
               Currently Borrowed Books
@@ -242,31 +283,7 @@ export default function Dashboard() {
               <div className="text-gray-600">No active borrowed books.</div>
             ) : (
               memberSummary.currentBorrows.map((b) => (
-                <div key={b.id} className="border-b border-gray-200 pb-4 mb-4">
-                  <p className="font-medium">
-                    {b.book?.title ?? "Unknown Title"}
-                  </p>
-                  <p className="text-sm text-gray-600">
-                    by {b.book?.author ?? "Unknown Author"}
-                  </p>
-                  <p className="text-xs text-gray-500">
-                    Borrowed: {new Date(b.borrowDate).toLocaleDateString()}
-                  </p>
-                  <div className="flex justify-between mt-2">
-                    <span
-                      className={`px-2 py-1 rounded text-xs font-semibold ${
-                        b.status === "Overdue"
-                          ? "bg-red-200 text-red-800"
-                          : "bg-yellow-200 text-yellow-800"
-                      }`}
-                    >
-                      {b.status}
-                    </span>
-                    <span className="text-sm text-gray-600">
-                      Due: {new Date(b.dueDate).toLocaleDateString()}
-                    </span>
-                  </div>
-                </div>
+                <BorrowedBookCard key={b.id} book={b} />
               ))
             )}
           </div>
@@ -276,15 +293,13 @@ export default function Dashboard() {
       {/* Quick Actions */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-6">
         {(isAdmin ? adminActions : studentActions).map((a) => (
-          <button
+          <ActionCard
             key={a.to}
+            icon={a.icon}
+            label={a.label}
+            desc={a.desc}
             onClick={() => navigate(a.to)}
-            className="group bg-white p-5 rounded-xl shadow-md text-center hover:bg-[#009966] hover:text-white transition transform hover:scale-105"
-          >
-            <a.icon className="w-8 h-8 text-[#009966] mx-auto mb-2 group-hover:text-white" />
-            <p className="font-medium">{a.label}</p>
-            <p className="text-sm">{a.desc}</p>
-          </button>
+          />
         ))}
       </div>
     </AppLayout>
