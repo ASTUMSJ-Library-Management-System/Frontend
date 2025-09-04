@@ -12,7 +12,7 @@ export default function ManageBooks() {
   const [category, setCategory] = useState("All");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingBook, setEditingBook] = useState(null);
-  const [expandedDesc, setExpandedDesc] = useState({}); // Read More / Read Less
+  const [categories, setCategories] = useState([]);
 
   useEffect(() => {
     fetchBooks();
@@ -24,7 +24,8 @@ export default function ManageBooks() {
       const booksData = await bookAPI.getBooks();
       setBooks(booksData);
     } catch (error) {
-      toast.error(error.message || "Failed to fetch records.");
+      console.error(error);
+      toast.error("Failed to load books.");
     } finally {
       setLoading(false);
     }
@@ -52,42 +53,54 @@ export default function ManageBooks() {
       (book.author || "").toLowerCase().includes(needle) ||
       ((book.ISBN || book.isbn || "") + "").toLowerCase().includes(needle);
     const matchesCategory =
-      category === "All" || (book.category || "") === category;
+      category === "All" || (book.category || "").includes(category);
     return matchesSearch && matchesCategory;
   });
 
   const handleDelete = async (id) => {
-    if (window.confirm("Are you sure you want to delete this book?")) {
-      try {
-        await bookAPI.deleteBook(id);
-        await fetchBooks();
-        toast.success("Book deleted successfully!");
-      } catch (error) {
-        toast.error(error.message || "Failed to delete book.");
-      }
-    }
+    toast((t) => (
+      <div className="flex items-center gap-3">
+        <span>Are you sure you want to delete this book?</span>
+        <div className="flex gap-2">
+          <button
+            onClick={async () => {
+              try {
+                await bookAPI.deleteBook(id);
+                await fetchBooks();
+                toast.dismiss(t);
+                toast.success("Book deleted successfully!");
+              } catch (error) {
+                console.error(error);
+                toast.dismiss(t);
+                toast.error("Failed to delete book.");
+              }
+            }}
+            className="px-3 py-1 bg-red-500 text-white rounded-md hover:bg-red-600"
+          >
+            Yes
+          </button>
+          <button
+            onClick={() => toast.dismiss(t)}
+            className="px-3 py-1 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300"
+          >
+            No
+          </button>
+        </div>
+      </div>
+    ), { duration: Infinity });
   };
 
   const handleSave = async (formElData) => {
     const title = formElData.get("title").trim();
     const author = formElData.get("author").trim();
     const isbn = formElData.get("isbn").trim();
-    const category = formElData.get("category").trim();
     const totalCopies = parseInt(formElData.get("copies").trim());
     const year = formElData.get("year").trim();
     const language = formElData.get("language").trim();
     const description = formElData.get("description").trim();
     const imageFile = formElData.get("image");
 
-    if (
-      !title ||
-      !author ||
-      !isbn ||
-      !category ||
-      !totalCopies ||
-      !year ||
-      !language
-    ) {
+    if (!title || !author || !isbn || !totalCopies || !year || !language) {
       toast.error("Please fill all required fields.");
       return false;
     }
@@ -107,7 +120,7 @@ export default function ManageBooks() {
       fd.append("title", title);
       fd.append("author", author);
       fd.append("ISBN", isbn);
-      fd.append("category", category);
+      fd.append("category", categories.join(",")); // submit categories as CSV
       fd.append("totalCopies", String(totalCopies));
       fd.append("publicationYear", String(parseInt(year)));
       fd.append("language", language);
@@ -129,7 +142,8 @@ export default function ManageBooks() {
       setIsModalOpen(false);
       return true;
     } catch (error) {
-      toast.error(error.message || "Failed to save book.");
+      console.error(error);
+      toast.error("Failed to save book.");
       return false;
     }
   };
@@ -151,6 +165,7 @@ export default function ManageBooks() {
         <button
           onClick={() => {
             setEditingBook(null);
+            setCategories([]);
             setIsModalOpen(true);
           }}
           className="bg-[#009966] text-white font-medium px-4 py-2 rounded-md hover:bg-[#007a52] flex items-center gap-2 shadow"
@@ -160,6 +175,7 @@ export default function ManageBooks() {
         </button>
       </div>
 
+      {/* Search + Filters */}
       <div className="mb-8">
         <div className="rounded-2xl border border-[#A4F4CF] bg-gradient-to-br from-[#EEFFF7] to-[#F7FFFB] p-3 sm:p-4 shadow-sm">
           <div className="flex flex-col sm:flex-row items-stretch gap-3">
@@ -194,11 +210,12 @@ export default function ManageBooks() {
         </div>
       </div>
 
+      {/* Book Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredBooks.map((book) => (
           <div
             key={book._id}
-            className="bg-white rounded-2xl shadow p-4 flex flex-col border border-gray-100"
+            className="bg-white rounded-2xl shadow p-4 flex flex-col border border-gray-100 min-h-[400px]"
           >
             <div className="flex justify-between items-start">
               <span
@@ -215,7 +232,7 @@ export default function ManageBooks() {
               </span>
             </div>
 
-            <div className="mt-3 mb-3 w-full">
+            <div className="mt-3 mb-3 w-full flex justify-center">
               <img
                 src={
                   book.image ||
@@ -237,33 +254,15 @@ export default function ManageBooks() {
               <span className="col-span-2">ISBN: {book.ISBN || book.isbn}</span>
             </div>
 
-            {book.description && (
-              <p className="text-sm text-gray-700 mt-2">
-                {expandedDesc[book._id]
-                  ? book.description
-                  : book.description?.length > 140
-                  ? `${book.description.slice(0, 140)}...`
-                  : book.description}
-                {book.description?.length > 140 && (
-                  <button
-                    onClick={() =>
-                      setExpandedDesc((prev) => ({
-                        ...prev,
-                        [book._id]: !prev[book._id],
-                      }))
-                    }
-                    className="ml-1 text-[#009966] hover:underline font-medium"
-                  >
-                    {expandedDesc[book._id] ? "Read Less" : "Read More"}
-                  </button>
-                )}
-              </p>
-            )}
-
             <div className="mt-auto pt-4 flex gap-2">
               <button
                 onClick={() => {
                   setEditingBook(book);
+                  setCategories(
+                    book.category
+                      ? book.category.split(",").map((c) => c.trim())
+                      : []
+                  );
                   setIsModalOpen(true);
                 }}
                 className="flex items-center gap-1 px-3 py-1.5 rounded-md bg-[#E5F7EF] text-[#009966] hover:bg-[#d6f2e6] cursor-pointer shadow-sm"
@@ -285,6 +284,7 @@ export default function ManageBooks() {
 
       <Pagination totalPages={6} />
 
+      {/* Add/Edit Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 flex items-center justify-center bg-black/20 backdrop-blur-sm z-50 px-4">
           <div className="bg-white rounded-2xl shadow-xl w-[95%] max-w-2xl p-6 sm:p-8 relative border border-gray-100 max-h-[90vh] overflow-y-auto">
@@ -310,13 +310,202 @@ export default function ManageBooks() {
               }}
               className="grid grid-cols-1 md:grid-cols-2 gap-6"
             >
-              {/* Form fields remain unchanged */}
-              {/* ...same as your previous code for Title, Author, ISBN, etc. */}
+              {/* Title */}
+              <div className="flex flex-col">
+                <label className="text-sm font-medium text-[#009966] mb-1">
+                  Title <span className="text-red-500">*</span>
+                </label>
+                <input
+                  name="title"
+                  type="text"
+                  defaultValue={editingBook?.title || ""}
+                  required
+                  className="border border-green-300 rounded-lg px-3 py-2 w-full focus:ring-2 focus:ring-green-400 focus:outline-none"
+                />
+              </div>
+
+              <div className="flex flex-col">
+                <label className="text-sm font-medium text-[#009966] mb-1">
+                  Author <span className="text-red-500">*</span>
+                </label>
+                <input
+                  name="author"
+                  type="text"
+                  defaultValue={editingBook?.author || ""}
+                  required
+                  className="border border-green-300 rounded-lg px-3 py-2 w-full focus:ring-2 focus:ring-green-400 focus:outline-none"
+                />
+              </div>
+
+              <div className="flex flex-col">
+                <label className="text-sm font-medium text-[#009966] mb-1">
+                  ISBN <span className="text-red-500">*</span>
+                </label>
+                <input
+                  name="isbn"
+                  type="text"
+                  defaultValue={editingBook?.ISBN || editingBook?.isbn || ""}
+                  required
+                  minLength={10}
+                  className="border border-green-300 rounded-lg px-3 py-2 w-full focus:ring-2 focus:ring-green-400 focus:outline-none"
+                />
+              </div>
+
+              {/* Category */}
+              <div className="flex flex-col md:col-span-2">
+                <label className="text-sm font-medium text-[#009966] mb-1">
+                  Category <span className="text-red-500">*</span>
+                </label>
+
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    id="categoryInput"
+                    placeholder="Type category and press Add"
+                    className="flex-1 border border-green-300 rounded-lg px-3 py-2 
+                               focus:ring-2 focus:ring-green-400 focus:outline-none"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const input = document.getElementById("categoryInput");
+                      const value = input.value.trim();
+                      if (value && !categories.includes(value)) {
+                        setCategories([...categories, value]);
+                      }
+                      input.value = "";
+                    }}
+                    className="px-4 py-2 bg-[#009966] text-white rounded-lg shadow-md hover:bg-[#007a52] transition"
+                  >
+                    Add
+                  </button>
+                </div>
+
+                <div className="flex flex-wrap gap-2 mt-3">
+                  {categories.map((cat, idx) => (
+                    <span
+                      key={idx}
+                      className="flex items-center gap-2 bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm shadow-sm"
+                    >
+                      {cat}
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setCategories(categories.filter((c) => c !== cat))
+                        }
+                        className="hover:text-red-500"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              {/* Copies / Year / Language */}
+              <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="flex flex-col">
+                  <label className="text-sm font-medium text-[#009966] mb-1">
+                    Total Copies <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    name="copies"
+                    type="number"
+                    defaultValue={editingBook?.totalCopies || ""}
+                    required
+                    min="1"
+                    className="border border-green-300 rounded-lg px-3 py-2 w-full focus:ring-2 focus:ring-green-400 focus:outline-none"
+                  />
+                </div>
+
+                <div className="flex flex-col">
+                  <label className="text-sm font-medium text-[#009966] mb-1">
+                    Published Year <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    name="year"
+                    type="number"
+                    defaultValue={
+                      editingBook?.publicationYear || editingBook?.year || ""
+                    }
+                    required
+                    min="1500"
+                    max={new Date().getFullYear()}
+                    className="border border-green-300 rounded-lg px-3 py-2 w-full focus:ring-2 focus:ring-green-400 focus:outline-none"
+                  />
+                </div>
+
+                <div className="flex flex-col">
+                  <label className="text-sm font-medium text-[#009966] mb-1">
+                    Language <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    name="language"
+                    type="text"
+                    defaultValue={editingBook?.language || ""}
+                    required
+                    className="border border-green-300 rounded-lg px-3 py-2 w-full focus:ring-2 focus:ring-green-400 focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              {/* Description */}
+              <div className="flex flex-col md:col-span-2">
+                <label className="text-sm font-medium text-[#009966] mb-1">
+                  Description
+                </label>
+                <textarea
+                  name="description"
+                  rows="5"
+                  defaultValue={editingBook?.description || ""}
+                  className="border border-green-300 rounded-lg px-3 py-2 w-full focus:ring-2 focus:ring-green-400 focus:outline-none"
+                ></textarea>
+              </div>
+
+              {/* Cover Image */}
+              <div className="flex flex-col md:col-span-2">
+                <label className="text-sm font-medium text-[#009966] mb-1">
+                  Cover Image
+                </label>
+                <input
+                  name="image"
+                  type="file"
+                  accept="image/*"
+                  className="border border-green-300 rounded-lg px-3 py-2 w-full focus:ring-2 focus:ring-green-400 focus:outline-none"
+                />
+                {editingBook?.image && (
+                  <img
+                    src={editingBook.image}
+                    alt="Current cover"
+                    className="mt-2 h-24 object-contain"
+                  />
+                )}
+              </div>
+
+              <div className="md:col-span-2 flex justify-end gap-3 mt-6">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEditingBook(null);
+                    setIsModalOpen(false);
+                  }}
+                  className="px-4 py-2 rounded-md border border-gray-300 text-gray-600 hover:bg-gray-100"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-[#009966] text-white rounded-md shadow-md hover:bg-[#007a52]"
+                >
+                  {editingBook ? "Update" : "Save"}
+                </button>
+              </div>
             </form>
           </div>
         </div>
       )}
-      <Toaster position="bottom-center" richColors />
+
+      <Toaster position="top-right" />
     </AppLayout>
   );
 }
