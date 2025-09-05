@@ -17,13 +17,12 @@ import { toast, Toaster } from "sonner";
 const FALLBACK_IMG =
   'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="300" height="200"><rect width="100%25" height="100%25" fill="%23f3f4f6"/><text x="50%25" y="50%25" dominant-baseline="middle" text-anchor="middle" font-size="16" fill="%239ca3af">No Image</text></svg>';
 
-// Helper: read user id from JWT (no dependency on localStorage.user)
+// ✅ Extract userId from token (JWT safe)
 function getMyUserIdFromToken() {
   const token = localStorage.getItem("token");
   if (!token) return null;
   try {
     const payload = JSON.parse(atob(token.split(".")[1] || ""));
-    // common JWT payload keys
     return payload.id || payload._id || payload.userId || payload.sub || null;
   } catch {
     return null;
@@ -37,10 +36,10 @@ export default function MyBooks() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
 
-  // ⭐ & 💬
-  const [ratings, setRatings] = useState({}); // per bookId: my rating value
-  const [avgRatings, setAvgRatings] = useState({}); // per bookId: average rating
-  const [ratingsCount, setRatingsCount] = useState({}); // per bookId: count of ratings
+  // ⭐ & 💬 states
+  const [ratings, setRatings] = useState({});
+  const [avgRatings, setAvgRatings] = useState({});
+  const [ratingsCount, setRatingsCount] = useState({});
   const [commentsByBook, setCommentsByBook] = useState({});
   const [newComment, setNewComment] = useState("");
   const [editingCommentId, setEditingCommentId] = useState(null);
@@ -48,6 +47,7 @@ export default function MyBooks() {
 
   const myUserId = getMyUserIdFromToken();
 
+  // 📥 Load borrowed books
   useEffect(() => {
     fetchMyBorrows();
   }, []);
@@ -64,12 +64,11 @@ export default function MyBooks() {
     }
   };
 
-  // 🔄 Load reviews when opening a book
+  // 📥 Load reviews for a book
   const fetchReviews = async (bookId) => {
     try {
       const data = await reviewAPI.getReviews(bookId);
 
-      // Prefer backend-provided myRating; fallback to computing
       const myRating =
         data.myRating ||
         data.ratings?.find(
@@ -89,6 +88,7 @@ export default function MyBooks() {
     }
   };
 
+  // 🔄 Return request
   const handleRequestReturn = async (borrowId) => {
     try {
       await borrowAPI.requestReturn(borrowId);
@@ -101,7 +101,7 @@ export default function MyBooks() {
     }
   };
 
-  // ⭐ Ratings (no front-end login guard; rely on token + 401 interceptor)
+  // ⭐ Rating
   const handleRate = async (bookId, star) => {
     try {
       const current = ratings[bookId] || 0;
@@ -109,25 +109,24 @@ export default function MyBooks() {
 
       if (updated === 0) {
         await reviewAPI.removeRating(bookId);
-        toast.success("⭐ Your rating was removed.");
         setRatings((prev) => ({ ...prev, [bookId]: 0 }));
+        toast.success("⭐ Your rating was removed.");
       } else {
         const res = await reviewAPI.addRating(bookId, updated);
-        toast.success(`⭐ You rated this book ${updated}/5`);
-        // use server-calculated values to keep UI consistent
         setRatings((prev) => ({ ...prev, [bookId]: res.myRating || updated }));
         setAvgRatings((prev) => ({ ...prev, [bookId]: res.avgRating || 0 }));
         setRatingsCount((prev) => ({
           ...prev,
           [bookId]: res.ratingsCount || 0,
         }));
+        toast.success(`⭐ You rated this book ${updated}/5`);
       }
     } catch {
       toast.error("Failed to update rating.");
     }
   };
 
-  // 💬 Comments (no front-end login guard; rely on token + 401 interceptor)
+  // 💬 Comments
   const handleAddComment = async (bookId) => {
     if (!newComment.trim()) return;
     try {
@@ -202,6 +201,7 @@ export default function MyBooks() {
     return "bg-gray-100 text-gray-700 border border-gray-200";
   };
 
+  // 🔍 Filtered books
   const filteredBooks = borrowedBooks.filter((b) => {
     const q = searchTerm.trim().toLowerCase();
     const matchSearch =
@@ -216,6 +216,7 @@ export default function MyBooks() {
     return matchSearch && matchStatus;
   });
 
+  // 🌀 UI
   if (loading) {
     return (
       <AppLayout>
@@ -357,8 +358,8 @@ export default function MyBooks() {
                   {borrow.bookId?.author || "Unknown Author"}
                 </p>
                 <p className="text-gray-600 text-xs mb-4">
-                  Borrowed: {new Date(borrow.borrowDate).toLocaleDateString()} |
-                  Due: {new Date(borrow.dueDate).toLocaleDateString()}
+                  Borrowed: {new Date(borrow.borrowDate).toLocaleDateString()} | Due:{" "}
+                  {new Date(borrow.dueDate).toLocaleDateString()}
                 </p>
 
                 <div className="mt-auto flex gap-2">
@@ -451,82 +452,57 @@ export default function MyBooks() {
               <img
                 src={selectedBook.bookId?.image || FALLBACK_IMG}
                 alt={selectedBook.bookId?.title || "Book"}
-                className="w-full h-60 object-contain bg-gray-50 mb-6"
+                className="w-full h-60 object-contain bg-gray-50 rounded-lg mb-6"
                 onError={(e) => {
                   e.currentTarget.src = FALLBACK_IMG;
                 }}
               />
 
               {/* Rating */}
-              <div className="mb-6">
-                <div className="flex items-center justify-between">
-                  <h3 className="font-semibold text-gray-700 mb-2">
-                    Rate this book:
-                  </h3>
-                  <div className="text-sm text-gray-600">
-                    <span className="font-medium">
-                      {avgRatings[selectedBook.bookId._id] ?? 0}/5
-                    </span>{" "}
-                    ({ratingsCount[selectedBook.bookId._id] ?? 0} ratings)
-                  </div>
-                </div>
-                <div className="flex gap-2">
-                  {[1, 2, 3, 4, 5].map((star) => (
-                    <button
-                      key={star}
-                      onClick={() => handleRate(selectedBook.bookId._id, star)}
-                      className="focus:outline-none"
-                    >
-                      <Star
-                        className={`h-7 w-7 transition-transform ${
-                          (ratings[selectedBook.bookId._id] || 0) >= star
-                            ? "text-yellow-400 fill-yellow-400"
-                            : "text-gray-300"
-                        } hover:scale-110`}
-                      />
-                    </button>
-                  ))}
-                </div>
+              <div className="flex items-center gap-2 mb-4">
+                <span className="font-medium">Your Rating:</span>
+                {[1, 2, 3, 4, 5].map((s) => (
+                  <Star
+                    key={s}
+                    size={22}
+                    className={`cursor-pointer transition-colors ${
+                      (ratings[selectedBook.bookId?._id] || 0) >= s
+                        ? "text-yellow-400 fill-yellow-400"
+                        : "text-gray-300"
+                    }`}
+                    onClick={() => handleRate(selectedBook.bookId._id, s)}
+                  />
+                ))}
+                <span className="ml-3 text-gray-600">
+                  Avg: {(avgRatings[selectedBook.bookId?._id] || 0).toFixed(1)} (
+                  {ratingsCount[selectedBook.bookId?._id] || 0} reviews)
+                </span>
               </div>
 
               {/* Comments */}
-              <div>
-                <h3 className="font-semibold text-gray-700 mb-2">Comments:</h3>
-                <div className="flex gap-2 mb-4">
-                  <input
-                    type="text"
-                    value={newComment}
-                    onChange={(e) => setNewComment(e.target.value)}
-                    placeholder="Write a comment..."
-                    className="flex-1 px-3 py-2 border border-[#A4F4CF] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#009966]"
-                  />
-                  <button
-                    onClick={() => handleAddComment(selectedBook.bookId._id)}
-                    className="px-4 py-2 bg-[#009966] text-white rounded-lg hover:bg-[#007a52]"
-                  >
-                    Add
-                  </button>
-                </div>
-
+              <div className="space-y-4">
+                <h3 className="font-semibold text-lg">Student Comments</h3>
                 <div className="space-y-3">
-                  {(commentsByBook[selectedBook.bookId._id] || []).map((c) => {
-                    const isMine =
-                      c.userId === myUserId || c.userId?._id === myUserId;
-                    const author =
-                      (typeof c.userId === "object" && c.userId?.name) ||
-                      (isMine ? "You" : "User");
-                    return (
-                      <div
-                        key={c._id}
-                        className="flex justify-between items-center border border-[#A4F4CF] rounded-lg p-2"
-                      >
-                        {editingCommentId === c._id ? (
-                          <div className="flex-1 flex gap-2">
-                            <input
-                              value={editingText}
-                              onChange={(e) => setEditingText(e.target.value)}
-                              className="flex-1 px-2 py-1 border border-[#A4F4CF] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#009966]"
-                            />
+                  {(commentsByBook[selectedBook.bookId?._id] || []).map((c) => (
+                    <div
+                      key={c._id}
+                      className="bg-gray-50 rounded-lg p-3 flex justify-between items-start"
+                    >
+                      {editingCommentId === c._id ? (
+                        <div className="flex-1 mr-2">
+                          <input
+                            type="text"
+                            value={editingText}
+                            onChange={(e) => setEditingText(e.target.value)}
+                            className="w-full px-2 py-1 border rounded-lg"
+                          />
+                        </div>
+                      ) : (
+                        <p className="text-gray-700 flex-1 mr-2">{c.text}</p>
+                      )}
+                      {String(c.userId?._id || c.userId) === myUserId && (
+                        <div className="flex gap-2">
+                          {editingCommentId === c._id ? (
                             <button
                               onClick={() =>
                                 handleSaveComment(
@@ -534,49 +510,51 @@ export default function MyBooks() {
                                   c._id
                                 )
                               }
-                              className="px-3 py-1 bg-[#009966] text-white rounded-lg text-sm"
+                              className="text-green-600 hover:text-green-800"
                             >
                               Save
                             </button>
-                          </div>
-                        ) : (
-                          <>
-                            <div className="flex-1">
-                              <span className="block text-sm text-gray-500">
-                                {author}
-                              </span>
-                              <span className="block">{c.text}</span>
-                            </div>
-                            <div className="flex gap-2">
-                              {isMine && (
-                                <>
-                                  <button
-                                    onClick={() =>
-                                      handleEditComment(c._id, c.text)
-                                    }
-                                    className="text-gray-500 hover:text-[#009966]"
-                                  >
-                                    <Pencil size={16} />
-                                  </button>
-                                  <button
-                                    onClick={() =>
-                                      handleDeleteComment(
-                                        selectedBook.bookId._id,
-                                        c._id
-                                      )
-                                    }
-                                    className="text-gray-500 hover:text-red-500"
-                                  >
-                                    <Trash2 size={16} />
-                                  </button>
-                                </>
-                              )}
-                            </div>
-                          </>
-                        )}
-                      </div>
-                    );
-                  })}
+                          ) : (
+                            <>
+                              <button
+                                onClick={() => handleEditComment(c._id, c.text)}
+                                className="text-blue-600 hover:text-blue-800"
+                              >
+                                <Pencil size={16} />
+                              </button>
+                              <button
+                                onClick={() =>
+                                  handleDeleteComment(
+                                    selectedBook.bookId._id,
+                                    c._id
+                                  )
+                                }
+                                className="text-red-600 hover:text-red-800"
+                              >
+                                <Trash2 size={16} />
+                              </button>
+                            </>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+
+                <div className="flex gap-2 mt-3">
+                  <input
+                    type="text"
+                    value={newComment}
+                    onChange={(e) => setNewComment(e.target.value)}
+                    placeholder="Write a comment..."
+                    className="flex-1 px-3 py-2 border rounded-lg"
+                  />
+                  <button
+                    onClick={() => handleAddComment(selectedBook.bookId._id)}
+                    className="px-4 py-2 bg-[#009966] text-white rounded-lg hover:bg-[#007755]"
+                  >
+                    Post
+                  </button>
                 </div>
               </div>
             </Motion.div>
