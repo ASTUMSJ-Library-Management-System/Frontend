@@ -1,6 +1,14 @@
 import React, { useEffect, useMemo, useState } from "react";
 import AppLayout from "../components/AppLayout";
-import { X, Eye, Search, ChevronDown } from "lucide-react";
+import {
+  X,
+  Eye,
+  Search,
+  ChevronDown,
+  Star,
+  Pencil,
+  Trash2,
+} from "lucide-react";
 import { motion as Motion, AnimatePresence } from "framer-motion";
 import { borrowAPI } from "../lib/api";
 import { toast, Toaster } from "sonner";
@@ -11,6 +19,12 @@ export default function MyBooks() {
   const [selectedBook, setSelectedBook] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
+
+  const [rating, setRating] = useState(0);
+  const [comments, setComments] = useState([]);
+  const [newComment, setNewComment] = useState("");
+  const [editingCommentId, setEditingCommentId] = useState(null);
+  const [editingText, setEditingText] = useState("");
 
   useEffect(() => {
     fetchMyBorrows();
@@ -42,6 +56,45 @@ export default function MyBooks() {
     }
   };
 
+  const handleRate = (star) => {
+    setRating((prev) => {
+      if (prev === star) {
+        toast.info("⭐ Your rating has been removed.");
+        return star - 1;
+      } else {
+        toast.success(`⭐ You rated this book ${star} out of 5!`);
+        return star;
+      }
+    });
+  };
+
+  const handleAddComment = () => {
+    if (!newComment.trim()) return;
+    const newEntry = { id: Date.now(), text: newComment };
+    setComments([...comments, newEntry]);
+    setNewComment("");
+    toast.success("💬 Your thoughts were added.");
+  };
+
+  const handleDeleteComment = (id) => {
+    setComments(comments.filter((c) => c.id !== id));
+    toast.success("🗑️ Comment removed.");
+  };
+
+  const handleEditComment = (id, text) => {
+    setEditingCommentId(id);
+    setEditingText(text);
+  };
+
+  const handleSaveComment = (id) => {
+    setComments(
+      comments.map((c) => (c.id === id ? { ...c, text: editingText } : c))
+    );
+    setEditingCommentId(null);
+    setEditingText("");
+    toast.success("✏️ Comment updated successfully.");
+  };
+
   const counts = useMemo(() => {
     const toLower = (s) => (s ? String(s).toLowerCase() : "");
     return {
@@ -54,22 +107,6 @@ export default function MyBooks() {
         .length,
     };
   }, [borrowedBooks]);
-
-  const getBadge = (label, count, colorClasses, setsTo) => (
-    <button
-      key={label}
-      onClick={() => setStatusFilter(setsTo)}
-      className={`px-3 py-1.5 rounded-full text-xs font-semibold border ${colorClasses} transition ${
-        statusFilter === setsTo
-          ? "ring-2 ring-offset-1 ring-[#009966]"
-          : "hover:opacity-90"
-      }`}
-      type="button"
-    >
-      {label}
-      <span className="ml-1 opacity-70">({count})</span>
-    </button>
-  );
 
   const statusPillClasses = (status) => {
     const s = String(status || "").toLowerCase();
@@ -111,33 +148,53 @@ export default function MyBooks() {
     <AppLayout>
       <Toaster position="top-right" richColors closeButton />
 
-      {/* Header & Status Filters */}
+      {/* Header & Filters */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-5">
         <h1 className="text-3xl font-bold text-[#009966]">Borrowed Books</h1>
         <div className="flex flex-wrap items-center gap-2">
-          {getBadge("Total", counts.total, "bg-teal-100 text-teal-800", "All")}
-          {getBadge(
-            "Borrowed",
-            counts.borrowed,
-            "bg-green-100 text-green-800",
-            "Active"
-          )}
-          {getBadge(
-            "Pending",
-            counts.pending,
-            "bg-yellow-100 text-yellow-800",
-            "Pending"
-          )}
-          {getBadge(
-            "Overdue",
-            counts.overdue,
-            "bg-red-100 text-red-800",
-            "Overdue"
-          )}
+          <button
+            onClick={() => setStatusFilter("All")}
+            className={`px-3 py-1.5 rounded-full text-xs font-semibold border ${
+              statusFilter === "All"
+                ? "ring-2 ring-offset-1 ring-[#009966]"
+                : "bg-teal-100 text-teal-800"
+            }`}
+          >
+            Total ({counts.total})
+          </button>
+          <button
+            onClick={() => setStatusFilter("Active")}
+            className={`px-3 py-1.5 rounded-full text-xs font-semibold border ${
+              statusFilter === "Active"
+                ? "ring-2 ring-offset-1 ring-[#009966]"
+                : "bg-green-100 text-green-800"
+            }`}
+          >
+            Borrowed ({counts.borrowed})
+          </button>
+          <button
+            onClick={() => setStatusFilter("Pending")}
+            className={`px-3 py-1.5 rounded-full text-xs font-semibold border ${
+              statusFilter === "Pending"
+                ? "ring-2 ring-offset-1 ring-[#009966]"
+                : "bg-yellow-100 text-yellow-800"
+            }`}
+          >
+            Pending ({counts.pending})
+          </button>
+          <button
+            onClick={() => setStatusFilter("Overdue")}
+            className={`px-3 py-1.5 rounded-full text-xs font-semibold border ${
+              statusFilter === "Overdue"
+                ? "ring-2 ring-offset-1 ring-[#009966]"
+                : "bg-red-100 text-red-800"
+            }`}
+          >
+            Overdue ({counts.overdue})
+          </button>
         </div>
       </div>
 
-      {/* Search & Status Dropdown */}
       <div className="mb-8">
         <div className="rounded-2xl border border-[#A4F4CF] bg-gradient-to-br from-[#EEFFF7] to-[#F7FFFB] p-3 sm:p-4 shadow-sm">
           <div className="flex flex-col sm:flex-row items-stretch gap-3">
@@ -198,7 +255,7 @@ export default function MyBooks() {
                   className="w-full h-56 object-contain p-4 block"
                 />
                 <span
-                  className={`pointer-events-none absolute top-3 right-3 z-10 rounded-full px-3 py-1 text-xs font-semibold shadow-sm ring-1 ring-black/5 ${statusPillClasses(
+                  className={`absolute top-3 right-3 z-10 rounded-full px-3 py-1 text-xs font-semibold shadow-sm ring-1 ring-black/5 ${statusPillClasses(
                     book.status
                   )}`}
                 >
@@ -220,7 +277,11 @@ export default function MyBooks() {
 
                 <div className="mt-auto flex gap-2">
                   <button
-                    onClick={() => setSelectedBook(book)}
+                    onClick={() => {
+                      setSelectedBook(book);
+                      setRating(0);
+                      setComments([]);
+                    }}
                     className="flex-1 bg-[#D0FAE5] text-gray-800 px-4 py-2 rounded-lg font-medium
                                hover:bg-[#A8EFD1] transition flex items-center justify-center gap-2"
                   >
@@ -305,8 +366,95 @@ export default function MyBooks() {
                   "https://via.placeholder.com/150"
                 }
                 alt={selectedBook.bookId?.title || "Book"}
-                className="w-full h-60 object-contain bg-gray-50"
+                className="w-full h-60 object-contain bg-gray-50 mb-6"
               />
+
+              {/* Rating */}
+              <div className="mb-6">
+                <h3 className="font-semibold text-gray-700 mb-2">
+                  Rate this book:
+                </h3>
+                <div className="flex gap-2">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <button
+                      key={star}
+                      onClick={() => handleRate(star)}
+                      className="focus:outline-none"
+                    >
+                      <Star
+                        className={`h-7 w-7 transition-transform ${
+                          rating >= star
+                            ? "text-yellow-400 fill-yellow-400"
+                            : "text-gray-300"
+                        } hover:scale-110`}
+                      />
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Comments */}
+              <div>
+                <h3 className="font-semibold text-gray-700 mb-2">Comments:</h3>
+                <div className="flex gap-2 mb-4">
+                  <input
+                    type="text"
+                    value={newComment}
+                    onChange={(e) => setNewComment(e.target.value)}
+                    placeholder="Write a comment..."
+                    className="flex-1 px-3 py-2 border border-[#A4F4CF] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#009966]"
+                  />
+                  <button
+                    onClick={handleAddComment}
+                    className="px-4 py-2 bg-[#009966] text-white rounded-lg hover:bg-[#007a52]"
+                  >
+                    Add
+                  </button>
+                </div>
+
+                <div className="space-y-3">
+                  {comments.map((c) => (
+                    <div
+                      key={c.id}
+                      className="flex justify-between items-center border border-[#A4F4CF] rounded-lg p-2"
+                    >
+                      {editingCommentId === c.id ? (
+                        <div className="flex-1 flex gap-2">
+                          <input
+                            value={editingText}
+                            onChange={(e) => setEditingText(e.target.value)}
+                            className="flex-1 px-2 py-1 border border-[#A4F4CF] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#009966]"
+                          />
+                          <button
+                            onClick={() => handleSaveComment(c.id)}
+                            className="px-3 py-1 bg-[#009966] text-white rounded-lg text-sm"
+                          >
+                            Save
+                          </button>
+                        </div>
+                      ) : (
+                        <>
+                          <span>{c.text}</span>
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => handleEditComment(c.id, c.text)}
+                              className="text-gray-500 hover:text-[#009966]"
+                            >
+                              <Pencil size={16} />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteComment(c.id)}
+                              className="text-gray-500 hover:text-red-500"
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
             </Motion.div>
           </Motion.div>
         )}
