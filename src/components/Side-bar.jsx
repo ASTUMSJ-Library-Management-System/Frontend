@@ -6,11 +6,13 @@ import {
   BookOpen,
   Library,
   CreditCard,
+  Award,
   User,
   LogOut,
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { useAuth } from "@/hooks/useAuth";
+import Achievements from "@/pages/Achievements";
 
 function SideNavLink({ to, icon: IconComp, label, onClick }) {
   const { pathname } = useLocation();
@@ -48,6 +50,7 @@ export default function Sidebar({ isOpen = false, onClose = () => {} }) {
     { to: "/browsebooks", label: "Browse Books", icon: BookOpen },
     { to: "/mybooks", label: "My Books", icon: Library },
     { to: "/membershippayment", label: "Membership Payment", icon: CreditCard },
+    { to: "/achievements", label: "Achievements", icon: Award },
     { to: "/profile", label: "Profile", icon: User },
   ];
 

@@ -12,6 +12,7 @@ export default function BrowseBooks() {
     hasMembership: true,
     borrowedThisMonth: 2,
     monthlyLimit: 3,
+    isstudent: true,
   });
 
   const [borrowedBooks, setBorrowedBooks] = useState(
@@ -60,6 +61,10 @@ export default function BrowseBooks() {
     if (!user.hasMembership) {
       toast.error("Membership required. Redirecting to payment...");
       setTimeout(() => navigate("/membershippayment"), 1500);
+      return;
+    }
+    if (!user.isstudent) {
+      toast.error("wait for admin's student approval.");
       return;
     }
 

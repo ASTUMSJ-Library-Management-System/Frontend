@@ -2,10 +2,12 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import { Toaster } from "sonner";
 
 import MembershipPayment from "./pages/MembershipPayment";
+import Home from "./pages/Home";
 import MyBooks from "./pages/MyBooks";
 import Profile from "./pages/Profile";
 import BrowseBooks from "./pages/BrowseBooks";
 import Dashboard from "./pages/Dashboard";
+import Achievements from "./pages/Achievements";
 import SignupForm from "./pages/SignupForm";
 import LoginPage from "./pages/LoginPage";
 import NotFound from "./pages/NotFound";
@@ -22,8 +24,9 @@ export default function App() {
       <Toaster position="top-right" richColors />
 
       <Routes>
-        <Route path="/" element={<Navigate to="/login" replace />} />
+        <Route path="/" element={<Navigate to="/Home" replace />} />
 
+        <Route path="/Home" element={<Home />} />
         <Route path="/signup" element={<SignupForm />} />
         <Route path="/login" element={<LoginPage />} />
 
@@ -32,6 +35,15 @@ export default function App() {
           element={
             <ProtectedRoute onlyStudent>
               <Dashboard />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/Achievements"
+          element={
+            <ProtectedRoute onlyStudent>
+              <Achievements />
             </ProtectedRoute>
           }
         />
