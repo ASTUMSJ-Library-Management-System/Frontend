@@ -16,7 +16,6 @@ import { toast, Toaster } from "sonner";
 const FALLBACK_IMG =
   'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="300" height="200"><rect width="100%25" height="100%25" fill="%23f3f4f6"/><text x="50%25" y="50%25" dominant-baseline="middle" text-anchor="middle" font-size="16" fill="%239ca3af">No Image</text></svg>';
 
-// Helper: read user id from JWT
 function getMyUserIdFromToken() {
   const token = localStorage.getItem("token");
   if (!token) return null;
@@ -27,6 +26,7 @@ function getMyUserIdFromToken() {
     return null;
   }
 }
+
 
 export default function MyBooks() {
   const [borrowedBooks, setBorrowedBooks] = useState([]);
@@ -156,20 +156,39 @@ export default function MyBooks() {
     setEditingText(text);
   };
 
-  const handleSaveComment = async (bookId, id) => {
+  const handleSaveComment = async () => {
+    if (!editingText.trim()) {
+      toast.error("💬 Comment cannot be empty!");
+      return;
+    }
+
     try {
-      const res = await reviewAPI.editComment(bookId, id, editingText.trim());
-      setCommentsByBook((prev) => ({
-        ...prev,
-        [bookId]: res.comments || [],
-      }));
-      setEditingCommentId(null);
-      setEditingText("");
-      toast.success("✏️ Comment updated.");
-    } catch {
-      toast.error("Failed to update comment.");
+      if (editingCommentId) {
+        // Update existing comment
+        const updateRes = await reviewAPI.updateComment(editingCommentId, { comment: editingText });
+        setCommentsByBook((prev) => ({
+          ...prev,
+          [selectedBook.bookId._id]: updateRes.comments || [],
+        }));
+        toast.success("✏️ Comment updated successfully!");
+        // Add new comment
+        const addRes = await reviewAPI.addComment(selectedBook.bookId._id, editingText.trim());
+        setCommentsByBook((prev) => ({
+          ...prev,
+          [selectedBook.bookId._id]: addRes.comments || [],
+        }));
+      setEditingText(""); // clear input
+      setEditingCommentId(null); // reset editing state
+      }
+
+      setNewComment(""); // clear input
+      setEditingCommentId(null); // reset editing state
+    } catch (error) {
+      console.error(error);
+      toast.error("⚠️ Something went wrong. Try again!");
     }
   };
+
 
   // 📊 Counters
   const counts = useMemo(() => {
