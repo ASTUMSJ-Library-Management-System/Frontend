@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import AppLayout from "../components/AppLayout";
-import { Eye, Plus, X, Search } from "lucide-react";
-import { studentBookAPI, borrowAPI } from "../lib/api";
+import { Eye, Plus, X, Search, Star } from "lucide-react";
+import { studentBookAPI, borrowAPI, reviewAPI } from "../lib/api";
 import { toast } from "sonner";
 
 export default function BrowseBooks() {
@@ -22,6 +22,15 @@ export default function BrowseBooks() {
   const [books, setBooks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedBook, setSelectedBook] = useState(null);
+
+  // ✅ Review state (same shape as MyBooks)
+  const [avgRating, setAvgRating] = useState(0);
+  const [ratingsCount, setRatingsCount] = useState(0);
+  const [comments, setComments] = useState([]);
+  const [myRating, setMyRating] = useState(null);
+  const [commentText, setCommentText] = useState("");
+
+  const [expandedReviews, setExpandedReviews] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [category, setCategory] = useState("All");
 
@@ -38,24 +47,28 @@ export default function BrowseBooks() {
       setLoading(true);
       const booksData = await studentBookAPI.getBooks();
       setBooks(booksData);
-    } catch (error) {
-      toast.error(error.message);
+    } catch {
+      toast.error("Failed to fetch books");
     } finally {
       setLoading(false);
     }
   };
 
-  const filteredBooks = books.filter((book) => {
-    const matchesSearch =
-      book.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      book.author.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (book.ISBN || book.isbn || "")
-        .toLowerCase()
-        .includes(searchTerm.toLowerCase());
-
-    const matchesCategory = category === "All" || book.category === category;
-    return matchesSearch && matchesCategory;
-  });
+  const fetchReviews = async (bookId) => {
+    try {
+      const res = await reviewAPI.getReviews(bookId);
+      setAvgRating(res.avgRating || 0);
+      setRatingsCount(res.ratingsCount || 0);
+      setComments(res.comments || []);
+      setMyRating(res.myRating || null);
+    } catch {
+      toast.error("Failed to load reviews");
+      setAvgRating(0);
+      setRatingsCount(0);
+      setComments([]);
+      setMyRating(null);
+    }
+  };
 
   const handleBorrow = async (book) => {
     if (!user.hasMembership) {
@@ -84,14 +97,6 @@ export default function BrowseBooks() {
       const dueDate = new Date();
       dueDate.setDate(dueDate.getDate() + 14);
 
-      const quotes = [
-        "“Reading is a light for the soul.” – Enjoy your journey!",
-        "“Seek knowledge from the cradle to the grave.”",
-        "“A book is a garden you can carry in your pocket.”",
-        "“Knowledge is the key to guidance.”",
-      ];
-      const randomQuote = quotes[Math.floor(Math.random() * quotes.length)];
-
       const updatedBorrowed = [
         ...borrowedBooks,
         { ...book, status: "Pending", borrowedDate: new Date(), dueDate },
@@ -104,7 +109,7 @@ export default function BrowseBooks() {
       }));
 
       toast.success(`📚 "${book.title}" borrowed successfully!`, {
-        description: `${randomQuote}\nReturn by: ${dueDate.toLocaleDateString()}\nRemaining borrows this month: ${
+        description: `Return by: ${dueDate.toLocaleDateString()}\nRemaining borrows this month: ${
           user.monthlyLimit - (user.borrowedThisMonth + 1)
         }`,
         duration: 4000,
@@ -112,15 +117,47 @@ export default function BrowseBooks() {
 
       await fetchBooks();
       navigate("/mybooks");
-    } catch (error) {
-      if (error.response?.status === 403) {
-        toast.error("Membership required. Redirecting to payment...");
-        setTimeout(() => navigate("/membershippayment"), 1500);
-      } else {
-        toast.error(error.message || "Failed to borrow book");
-      }
+    } catch {
+      toast.error("Failed to borrow book");
     }
   };
+
+  // ✅ Submit rating
+  const handleRating = async (bookId, value) => {
+    try {
+      await reviewAPI.addRating(bookId, value);
+      setMyRating(value);
+      toast.success("Rating submitted!");
+      fetchReviews(bookId);
+    } catch {
+      toast.error("Failed to submit rating");
+    }
+  };
+
+  // ✅ Submit comment
+  const handleComment = async (bookId) => {
+    if (!commentText.trim()) return;
+    try {
+      await reviewAPI.addComment(bookId, { text: commentText });
+      toast.success("Comment added!");
+      setCommentText("");
+      fetchReviews(bookId);
+    } catch {
+      toast.error("Failed to add comment");
+    }
+  };
+
+  const filteredBooks = books.filter((book) => {
+    const matchesSearch =
+      book.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      book.author.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (book.ISBN || book.isbn || "")
+        .toLowerCase()
+        .includes(searchTerm.toLowerCase());
+
+    const matchesCategory = category === "All" || book.category === category;
+    return matchesSearch && matchesCategory;
+  });
 
   if (loading) {
     return (
@@ -141,7 +178,7 @@ export default function BrowseBooks() {
         Discover and borrow books from our Islamic library collection
       </p>
 
-      {/* Search and Category Filter */}
+      {/* Search + Category */}
       <div className="mb-8">
         <div className="rounded-2xl border border-[#A4F4CF] bg-gradient-to-br from-[#EEFFF7] to-[#F7FFFB] p-3 sm:p-4 shadow-sm">
           <div className="flex flex-col sm:flex-row items-stretch gap-3">
@@ -221,13 +258,13 @@ export default function BrowseBooks() {
                 {book.title}
               </h3>
               <p className="text-sm text-gray-600 mb-2">{book.author}</p>
-              <p className="text-sm text-gray-700 line-clamp-2 flex-1">
-                {book.description}
-              </p>
 
               <button
-                onClick={() => setSelectedBook(book)}
-                className="mt-4 flex items-center justify-center gap-2 bg-[#D0FAE5] text-gray-800 px-4 py-2 rounded-lg font-medium hover:bg-[#A8EFD1] transition"
+                onClick={() => {
+                  setSelectedBook(book);
+                  fetchReviews(book._id);
+                }}
+                className="mt-auto flex items-center justify-center gap-2 bg-[#D0FAE5] text-gray-800 px-4 py-2 rounded-lg font-medium hover:bg-[#A8EFD1] transition"
               >
                 <Eye size={18} /> View Detail
               </button>
@@ -267,31 +304,95 @@ export default function BrowseBooks() {
                 by {selectedBook.author} •{" "}
                 {selectedBook.publicationYear || selectedBook.year}
               </p>
+
+              {/* Rating summary */}
+              <div className="flex items-center gap-2 mb-4">
+                <Star className="w-5 h-5 text-yellow-500 fill-yellow-500" />
+                <span className="font-medium">{avgRating.toFixed(1)}</span>
+                <span className="text-sm text-gray-500">
+                  ({ratingsCount} ratings)
+                </span>
+              </div>
+
               <p className="text-gray-700 text-sm leading-relaxed mb-4">
                 {selectedBook.description}
               </p>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm text-gray-600 mb-6">
-                <p>
-                  <span className="font-medium">Language:</span>{" "}
-                  {selectedBook.language}
-                </p>
-                <p>
-                  <span className="font-medium">ISBN:</span>{" "}
-                  {selectedBook.ISBN || selectedBook.isbn}
-                </p>
-                <p>
-                  <span className="font-medium">Copies:</span>{" "}
-                  {selectedBook.availableCopies}/{selectedBook.totalCopies}
-                </p>
-              </div>
-
+              {/* Borrow */}
               <button
                 onClick={() => handleBorrow(selectedBook)}
-                className="bg-[#D0FAE5] text-gray-800 px-5 py-2 rounded-lg font-medium hover:bg-[#A8EFD1] transition flex items-center gap-2"
+                className="bg-[#D0FAE5] text-gray-800 px-5 py-2 rounded-lg font-medium hover:bg-[#A8EFD1] transition flex items-center gap-2 mb-6"
               >
                 <Plus size={18} /> Borrow This Book
               </button>
+
+              {/* --- Reviews --- */}
+              <div className="border-t pt-4">
+                <h3 className="text-lg font-semibold mb-2">Student Reviews</h3>
+
+                {/* Rating stars input */}
+                {borrowedBooks.some((b) => b._id === selectedBook._id) && (
+                  <div className="flex items-center gap-1 mb-3">
+                    {[1, 2, 3, 4, 5].map((val) => (
+                      <Star
+                        key={val}
+                        className={`w-6 h-6 cursor-pointer ${
+                          val <= (myRating || 0)
+                            ? "text-yellow-500 fill-yellow-500"
+                            : "text-gray-300"
+                        }`}
+                        onClick={() => handleRating(selectedBook._id, val)}
+                      />
+                    ))}
+                  </div>
+                )}
+
+                {/* Comment input */}
+                {borrowedBooks.some((b) => b._id === selectedBook._id) && (
+                  <div className="flex gap-2 mb-4">
+                    <input
+                      type="text"
+                      value={commentText}
+                      onChange={(e) => setCommentText(e.target.value)}
+                      placeholder="Write a comment..."
+                      className="flex-1 border rounded-lg px-3 py-2 text-sm"
+                    />
+                    <button
+                      onClick={() => handleComment(selectedBook._id)}
+                      className="bg-[#009966] text-white px-4 py-2 rounded-lg text-sm hover:bg-[#007a55]"
+                    >
+                      Post
+                    </button>
+                  </div>
+                )}
+
+                {/* Comments list */}
+                {comments.length === 0 && (
+                  <p className="text-sm text-gray-500">No comments yet.</p>
+                )}
+
+                {comments
+                  .slice(0, expandedReviews ? comments.length : 3)
+                  .map((c) => (
+                    <div key={c._id} className="mb-3">
+                      <p className="text-sm text-gray-700">{c.text}</p>
+                      <span className="text-xs text-gray-400">
+                        —{" "}
+                        {(typeof c.userId === "object" && c.userId?.name) ||
+                          "Student"}
+                      </span>
+                    </div>
+                  ))}
+
+                {comments.length > 3 && (
+                  <button
+                    onClick={() => setExpandedReviews(!expandedReviews)}
+                    className="text-sm text-[#009966] hover:underline"
+                  >
+                    {expandedReviews ? "Show Less" : "See All Comments"}
+                  </button>
+                )}
+              </div>
             </div>
 
             <div className="flex-1 bg-gray-50 flex items-center justify-center p-6">

@@ -27,16 +27,26 @@ const StatCard = ({ title, value, color = "green", extra }) => {
   );
 };
 
-const ActionCard = ({ icon: Icon, label, desc, onClick }) => (
-  <button
-    onClick={onClick}
-    className="group bg-white p-5 rounded-xl shadow-md text-center hover:bg-[#009966] hover:text-white transition transform hover:scale-105"
-  >
-    <Icon className="w-8 h-8 text-[#009966] mx-auto mb-2 group-hover:text-white" />
-    <p className="font-medium">{label}</p>
-    <p className="text-sm">{desc}</p>
-  </button>
-);
+// ✅ Correct ActionCard
+const ActionCard = ({ icon, label, desc, onClick }) => {
+  // Rename the prop to a component
+  const IconComponent = icon;
+
+  return (
+    <button
+      onClick={onClick}
+      className="group bg-white p-5 rounded-xl shadow-md text-center hover:bg-[#009966] hover:text-white transition transform hover:scale-105"
+    >
+      {/* Render only if icon exists */}
+      {IconComponent && (
+        <IconComponent className="w-8 h-8 text-[#009966] mx-auto mb-2 group-hover:text-white" />
+      )}
+      <p className="font-medium">{label}</p>
+      <p className="text-sm">{desc}</p>
+    </button>
+  );
+};
+
 
 const BorrowedBookCard = ({ book }) => (
   <div className="border-b border-gray-200 pb-4 mb-4">

@@ -10,8 +10,23 @@ import {
   Trash2,
 } from "lucide-react";
 import { motion as Motion, AnimatePresence } from "framer-motion";
-import { borrowAPI } from "../lib/api";
+import { borrowAPI, reviewAPI } from "../lib/api";
 import { toast, Toaster } from "sonner";
+
+const FALLBACK_IMG =
+  'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="300" height="200"><rect width="100%25" height="100%25" fill="%23f3f4f6"/><text x="50%25" y="50%25" dominant-baseline="middle" text-anchor="middle" font-size="16" fill="%239ca3af">No Image</text></svg>';
+
+function getMyUserIdFromToken() {
+  const token = localStorage.getItem("token");
+  if (!token) return null;
+  try {
+    const payload = JSON.parse(atob(token.split(".")[1] || ""));
+    return payload.id || payload._id || payload.userId || payload.sub || null;
+  } catch {
+    return null;
+  }
+}
+
 
 export default function MyBooks() {
   const [borrowedBooks, setBorrowedBooks] = useState([]);
@@ -20,11 +35,16 @@ export default function MyBooks() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
 
-  const [rating, setRating] = useState(0);
-  const [comments, setComments] = useState([]);
+  // ⭐ & 💬 states
+  const [ratings, setRatings] = useState({});
+  const [avgRatings, setAvgRatings] = useState({});
+  const [ratingsCount, setRatingsCount] = useState({});
+  const [commentsByBook, setCommentsByBook] = useState({});
   const [newComment, setNewComment] = useState("");
   const [editingCommentId, setEditingCommentId] = useState(null);
   const [editingText, setEditingText] = useState("");
+
+  const myUserId = getMyUserIdFromToken();
 
   useEffect(() => {
     fetchMyBorrows();
@@ -35,10 +55,33 @@ export default function MyBooks() {
       setLoading(true);
       const borrowsData = await borrowAPI.getMyBorrows();
       setBorrowedBooks(borrowsData);
-    } catch (error) {
-      toast.error(error?.message || "Failed to fetch borrowed books.");
+    } catch {
+      toast.error("Failed to fetch borrowed books.");
     } finally {
       setLoading(false);
+    }
+  };
+
+  // 🔄 Load reviews when opening a book
+  const fetchReviews = async (bookId) => {
+    try {
+      const data = await reviewAPI.getReviews(bookId);
+      const myRating =
+        data.myRating ||
+        data.ratings?.find(
+          (r) => r.userId === myUserId || r.userId?._id === myUserId
+        )?.value ||
+        0;
+
+      setRatings((prev) => ({ ...prev, [bookId]: myRating }));
+      setAvgRatings((prev) => ({ ...prev, [bookId]: data.avgRating || 0 }));
+      setRatingsCount((prev) => ({
+        ...prev,
+        [bookId]: data.ratingsCount || 0,
+      }));
+      setCommentsByBook((prev) => ({ ...prev, [bookId]: data.comments || [] }));
+    } catch {
+      toast.error("Failed to fetch reviews.");
     }
   };
 
@@ -49,36 +92,63 @@ export default function MyBooks() {
       toast.success(
         "📘 Return request submitted. Waiting for librarian approval."
       );
-    } catch (error) {
-      toast.error(
-        error?.message || "Failed to request return. Please try again."
-      );
+    } catch {
+      toast.error("Failed to request return. Please try again.");
     }
   };
 
-  const handleRate = (star) => {
-    setRating((prev) => {
-      if (prev === star) {
-        toast.info("⭐ Your rating has been removed.");
-        return star - 1;
+  // ⭐ Rating
+  const handleRate = async (bookId, star) => {
+    try {
+      const current = ratings[bookId] || 0;
+      const updated = current === star ? 0 : star;
+
+      if (updated === 0) {
+        await reviewAPI.removeRating(bookId);
+        toast.success("⭐ Your rating was removed.");
+        setRatings((prev) => ({ ...prev, [bookId]: 0 }));
       } else {
-        toast.success(`⭐ You rated this book ${star} out of 5!`);
-        return star;
+        const res = await reviewAPI.addRating(bookId, updated);
+        toast.success(`⭐ You rated this book ${updated}/5`);
+        setRatings((prev) => ({ ...prev, [bookId]: res.myRating || updated }));
+        setAvgRatings((prev) => ({ ...prev, [bookId]: res.avgRating || 0 }));
+        setRatingsCount((prev) => ({
+          ...prev,
+          [bookId]: res.ratingsCount || 0,
+        }));
       }
-    });
+    } catch {
+      toast.error("Failed to update rating.");
+    }
   };
 
-  const handleAddComment = () => {
+  // 💬 Comments
+  const handleAddComment = async (bookId) => {
     if (!newComment.trim()) return;
-    const newEntry = { id: Date.now(), text: newComment };
-    setComments([...comments, newEntry]);
-    setNewComment("");
-    toast.success("💬 Your thoughts were added.");
+    try {
+      const res = await reviewAPI.addComment(bookId, newComment.trim());
+      setCommentsByBook((prev) => ({
+        ...prev,
+        [bookId]: res.comments || [],
+      }));
+      setNewComment("");
+      toast.success("💬 Comment added.");
+    } catch {
+      toast.error("Failed to add comment.");
+    }
   };
 
-  const handleDeleteComment = (id) => {
-    setComments(comments.filter((c) => c.id !== id));
-    toast.success("🗑️ Comment removed.");
+  const handleDeleteComment = async (bookId, id) => {
+    try {
+      const res = await reviewAPI.deleteComment(bookId, id);
+      setCommentsByBook((prev) => ({
+        ...prev,
+        [bookId]: res.comments || [],
+      }));
+      toast.success("🗑️ Comment deleted.");
+    } catch {
+      toast.error("Failed to delete comment.");
+    }
   };
 
   const handleEditComment = (id, text) => {
@@ -86,15 +156,41 @@ export default function MyBooks() {
     setEditingText(text);
   };
 
-  const handleSaveComment = (id) => {
-    setComments(
-      comments.map((c) => (c.id === id ? { ...c, text: editingText } : c))
-    );
-    setEditingCommentId(null);
-    setEditingText("");
-    toast.success("✏️ Comment updated successfully.");
+  const handleSaveComment = async () => {
+    if (!editingText.trim()) {
+      toast.error("💬 Comment cannot be empty!");
+      return;
+    }
+
+    try {
+      if (editingCommentId) {
+        // Update existing comment
+        const updateRes = await reviewAPI.updateComment(editingCommentId, { comment: editingText });
+        setCommentsByBook((prev) => ({
+          ...prev,
+          [selectedBook.bookId._id]: updateRes.comments || [],
+        }));
+        toast.success("✏️ Comment updated successfully!");
+        // Add new comment
+        const addRes = await reviewAPI.addComment(selectedBook.bookId._id, editingText.trim());
+        setCommentsByBook((prev) => ({
+          ...prev,
+          [selectedBook.bookId._id]: addRes.comments || [],
+        }));
+      setEditingText(""); // clear input
+      setEditingCommentId(null); // reset editing state
+      }
+
+      setNewComment(""); // clear input
+      setEditingCommentId(null); // reset editing state
+    } catch (error) {
+      console.error(error);
+      toast.error("⚠️ Something went wrong. Try again!");
+    }
   };
 
+
+  // 📊 Counters
   const counts = useMemo(() => {
     const toLower = (s) => (s ? String(s).toLowerCase() : "");
     return {
@@ -195,6 +291,7 @@ export default function MyBooks() {
         </div>
       </div>
 
+      {/* Search + Filter */}
       <div className="mb-8">
         <div className="rounded-2xl border border-[#A4F4CF] bg-gradient-to-br from-[#EEFFF7] to-[#F7FFFB] p-3 sm:p-4 shadow-sm">
           <div className="flex flex-col sm:flex-row items-stretch gap-3">
@@ -238,9 +335,9 @@ export default function MyBooks() {
       {/* Books Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         <AnimatePresence>
-          {filteredBooks.map((book) => (
+          {filteredBooks.map((borrow) => (
             <Motion.div
-              key={book._id}
+              key={borrow._id}
               layout
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
@@ -250,52 +347,54 @@ export default function MyBooks() {
             >
               <div className="relative bg-gray-50">
                 <img
-                  src={book.bookId?.image || "https://via.placeholder.com/150"}
-                  alt={book.bookId?.title || "Book"}
+                  src={borrow.bookId?.image || FALLBACK_IMG}
+                  alt={borrow.bookId?.title || "Book"}
                   className="w-full h-56 object-contain p-4 block"
+                  onError={(e) => {
+                    e.currentTarget.src = FALLBACK_IMG;
+                  }}
                 />
                 <span
                   className={`absolute top-3 right-3 z-10 rounded-full px-3 py-1 text-xs font-semibold shadow-sm ring-1 ring-black/5 ${statusPillClasses(
-                    book.status
+                    borrow.status
                   )}`}
                 >
-                  {book.status}
+                  {borrow.status}
                 </span>
               </div>
 
               <div className="p-6 flex flex-col flex-1">
                 <h3 className="text-lg font-semibold truncate">
-                  {book.bookId?.title || "Unknown Book"}
+                  {borrow.bookId?.title || "Unknown Book"}
                 </h3>
                 <p className="text-gray-500 text-sm mb-2 truncate">
-                  {book.bookId?.author || "Unknown Author"}
+                  {borrow.bookId?.author || "Unknown Author"}
                 </p>
                 <p className="text-gray-600 text-xs mb-4">
-                  Borrowed: {new Date(book.borrowDate).toLocaleDateString()} |
-                  Due: {new Date(book.dueDate).toLocaleDateString()}
+                  Borrowed: {new Date(borrow.borrowDate).toLocaleDateString()} |
+                  Due: {new Date(borrow.dueDate).toLocaleDateString()}
                 </p>
 
                 <div className="mt-auto flex gap-2">
                   <button
                     onClick={() => {
-                      setSelectedBook(book);
-                      setRating(0);
-                      setComments([]);
+                      setSelectedBook(borrow);
+                      if (borrow.bookId?._id) fetchReviews(borrow.bookId._id);
                     }}
                     className="flex-1 bg-[#D0FAE5] text-gray-800 px-4 py-2 rounded-lg font-medium
-                               hover:bg-[#A8EFD1] transition flex items-center justify-center gap-2"
+                             hover:bg-[#A8EFD1] transition flex items-center justify-center gap-2"
                   >
                     <Eye size={16} /> View Details
                   </button>
-                  {book.status !== "Returned" && (
+                  {borrow.status !== "Returned" && (
                     <button
-                      onClick={() => handleRequestReturn(book._id)}
+                      onClick={() => handleRequestReturn(borrow._id)}
                       className="flex-1 bg-gradient-to-r from-[#ff6b6b] to-[#ff4757] text-white font-semibold
                                  px-4 py-2 rounded-lg hover:scale-105 transition-transform flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
-                      disabled={book.status === "Pending"}
+                      disabled={borrow.status === "Pending"}
                     >
                       <X size={16} />{" "}
-                      {book.status === "Pending"
+                      {borrow.status === "Pending"
                         ? "Pending Approval"
                         : "Request Return"}
                     </button>
@@ -307,7 +406,7 @@ export default function MyBooks() {
         </AnimatePresence>
       </div>
 
-      {/* Modal */}
+      {/* Modal (reviews) */}
       <AnimatePresence>
         {selectedBook && (
           <Motion.div
@@ -333,6 +432,7 @@ export default function MyBooks() {
               >
                 <X size={22} />
               </button>
+
               <h2 className="text-2xl font-bold mb-2">
                 {selectedBook.bookId?.title || "Unknown Book"}
               </h2>
@@ -342,6 +442,7 @@ export default function MyBooks() {
               <p className="text-gray-700 mb-4">
                 {selectedBook.bookId?.description || "No description available"}
               </p>
+
               <div className="grid grid-cols-2 gap-4 text-sm text-gray-600 mb-4">
                 <div>
                   <span className="font-medium">Language:</span>{" "}
@@ -360,30 +461,39 @@ export default function MyBooks() {
                   {new Date(selectedBook.dueDate).toLocaleDateString()}
                 </div>
               </div>
+
               <img
-                src={
-                  selectedBook.bookId?.image ||
-                  "https://via.placeholder.com/150"
-                }
+                src={selectedBook.bookId?.image || FALLBACK_IMG}
                 alt={selectedBook.bookId?.title || "Book"}
                 className="w-full h-60 object-contain bg-gray-50 mb-6"
+                onError={(e) => {
+                  e.currentTarget.src = FALLBACK_IMG;
+                }}
               />
 
               {/* Rating */}
               <div className="mb-6">
-                <h3 className="font-semibold text-gray-700 mb-2">
-                  Rate this book:
-                </h3>
+                <div className="flex items-center justify-between">
+                  <h3 className="font-semibold text-gray-700 mb-2">
+                    Rate this book:
+                  </h3>
+                  <div className="text-sm text-gray-600">
+                    <span className="font-medium">
+                      {avgRatings[selectedBook.bookId._id] ?? 0}/5
+                    </span>{" "}
+                    ({ratingsCount[selectedBook.bookId._id] ?? 0} ratings)
+                  </div>
+                </div>
                 <div className="flex gap-2">
                   {[1, 2, 3, 4, 5].map((star) => (
                     <button
                       key={star}
-                      onClick={() => handleRate(star)}
+                      onClick={() => handleRate(selectedBook.bookId._id, star)}
                       className="focus:outline-none"
                     >
                       <Star
                         className={`h-7 w-7 transition-transform ${
-                          rating >= star
+                          (ratings[selectedBook.bookId._id] || 0) >= star
                             ? "text-yellow-400 fill-yellow-400"
                             : "text-gray-300"
                         } hover:scale-110`}
@@ -405,7 +515,7 @@ export default function MyBooks() {
                     className="flex-1 px-3 py-2 border border-[#A4F4CF] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#009966]"
                   />
                   <button
-                    onClick={handleAddComment}
+                    onClick={() => handleAddComment(selectedBook.bookId._id)}
                     className="px-4 py-2 bg-[#009966] text-white rounded-lg hover:bg-[#007a52]"
                   >
                     Add
@@ -413,46 +523,74 @@ export default function MyBooks() {
                 </div>
 
                 <div className="space-y-3">
-                  {comments.map((c) => (
-                    <div
-                      key={c.id}
-                      className="flex justify-between items-center border border-[#A4F4CF] rounded-lg p-2"
-                    >
-                      {editingCommentId === c.id ? (
-                        <div className="flex-1 flex gap-2">
-                          <input
-                            value={editingText}
-                            onChange={(e) => setEditingText(e.target.value)}
-                            className="flex-1 px-2 py-1 border border-[#A4F4CF] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#009966]"
-                          />
-                          <button
-                            onClick={() => handleSaveComment(c.id)}
-                            className="px-3 py-1 bg-[#009966] text-white rounded-lg text-sm"
-                          >
-                            Save
-                          </button>
-                        </div>
-                      ) : (
-                        <>
-                          <span>{c.text}</span>
-                          <div className="flex gap-2">
+                  {(commentsByBook[selectedBook.bookId._id] || []).map((c) => {
+                    const isMine =
+                      c.userId === myUserId || c.userId?._id === myUserId;
+                    const author =
+                      (typeof c.userId === "object" && c.userId?.name) ||
+                      (isMine ? "You" : "User");
+                    return (
+                      <div
+                        key={c._id}
+                        className="flex justify-between items-center border border-[#A4F4CF] rounded-lg p-2"
+                      >
+                        {editingCommentId === c._id ? (
+                          <div className="flex-1 flex gap-2">
+                            <input
+                              value={editingText}
+                              onChange={(e) => setEditingText(e.target.value)}
+                              className="flex-1 px-2 py-1 border border-[#A4F4CF] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#009966]"
+                            />
                             <button
-                              onClick={() => handleEditComment(c.id, c.text)}
-                              className="text-gray-500 hover:text-[#009966]"
+                              onClick={() =>
+                                handleSaveComment(
+                                  selectedBook.bookId._id,
+                                  c._id
+                                )
+                              }
+                              className="px-3 py-1 bg-[#009966] text-white rounded-lg text-sm"
                             >
-                              <Pencil size={16} />
-                            </button>
-                            <button
-                              onClick={() => handleDeleteComment(c.id)}
-                              className="text-gray-500 hover:text-red-500"
-                            >
-                              <Trash2 size={16} />
+                              Save
                             </button>
                           </div>
-                        </>
-                      )}
-                    </div>
-                  ))}
+                        ) : (
+                          <>
+                            <div className="flex-1">
+                              <span className="block text-sm text-gray-500">
+                                {author}
+                              </span>
+                              <span className="block">{c.text}</span>
+                            </div>
+                            <div className="flex gap-2">
+                              {isMine && (
+                                <>
+                                  <button
+                                    onClick={() =>
+                                      handleEditComment(c._id, c.text)
+                                    }
+                                    className="text-gray-500 hover:text-[#009966]"
+                                  >
+                                    <Pencil size={16} />
+                                  </button>
+                                  <button
+                                    onClick={() =>
+                                      handleDeleteComment(
+                                        selectedBook.bookId._id,
+                                        c._id
+                                      )
+                                    }
+                                    className="text-gray-500 hover:text-red-500"
+                                  >
+                                    <Trash2 size={16} />
+                                  </button>
+                                </>
+                              )}
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             </Motion.div>
