@@ -48,8 +48,13 @@ export default function BorrowingRecords() {
     }
   };
 
-  const handleMarkAsReturned = async (recordId) => {
+  const handleMarkAsReturned = async (recordId, recordStatus) => {
     try {
+      if (recordStatus === "Active") {
+        toast.info("No return request from student.");
+        return;
+      }
+
       await borrowAPI.markAsReturned(recordId);
       await fetchBorrowRecords();
       toast.success("📦 Book marked as returned.");
@@ -58,7 +63,6 @@ export default function BorrowingRecords() {
     }
   };
 
-  //  Status Colors
   const statusColors = {
     Active: "bg-blue-100 text-blue-600",
     Pending: "bg-yellow-100 text-yellow-600",
@@ -157,7 +161,6 @@ export default function BorrowingRecords() {
             </p>
           </div>
 
-          {/* Modal Actions */}
           <div className="mt-6 flex gap-3 justify-end">
             {record.status === "Pending" && (
               <>
@@ -178,7 +181,7 @@ export default function BorrowingRecords() {
 
             {(record.status === "Active" || record.status === "Overdue") && (
               <button
-                onClick={() => handleMarkAsReturned(record._id)}
+                onClick={() => handleMarkAsReturned(record._id, record.status)}
                 className="px-4 py-2 bg-[#009966] text-white rounded-lg hover:bg-[#006045]"
               >
                 Mark as Returned
@@ -262,7 +265,6 @@ export default function BorrowingRecords() {
                 className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-4"
               >
                 <div className="flex justify-between items-center">
-                  {/* User Info */}
                   <div className="flex items-center gap-3">
                     <div className="w-12 h-12 rounded-full bg-[#C9FAE3] text-[#189966] flex items-center justify-center font-semibold">
                       {rec.userId?.name
@@ -310,7 +312,6 @@ export default function BorrowingRecords() {
                   )}
                 </div>
 
-                {/* Actions */}
                 <div className="flex justify-between mt-4 gap-4">
                   <button
                     onClick={() => setSelectedRecord(rec)}
@@ -331,7 +332,6 @@ export default function BorrowingRecords() {
         <Pagination totalPages={6} />
       </div>
 
-      {/* Modal */}
       <AnimatePresence>
         {selectedRecord && (
           <RecordModal

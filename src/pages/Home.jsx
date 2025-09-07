@@ -1,9 +1,60 @@
 import { useNavigate } from "react-router-dom";
 import React, { useState, useEffect } from "react";
-import { Facebook, Instagram, Twitter } from "lucide-react";
+import { ChevronLeft, ChevronRight, Facebook, Instagram } from "lucide-react";
+
+const sectors = [
+  {
+    title: "Qira'at and Dawa sectors",
+    time: "Every Tuesday at 6:00 PM",
+    description:
+      "Join a circle for studying the recitation and interpretation of the Quran and engaging in community outreach.",
+    image: "/qira'at.jpg",
+  },
+  {
+    title: "Social sector",
+    time: "Saturday, October 28th, 9:00 AM",
+    description:
+      "Participate in events focused on community service, charity, and social welfare projects.",
+    image: "/finance.jpg",
+  },
+  {
+    title: "Finance sector",
+    time: "Monday, November 6th, 7:00 PM",
+    description:
+      "Learn about ethical finance, wealth management, and investment strategies that align with your values.",
+    image: "/social.jpg",
+  },
+  {
+    title: "General Amir sector",
+    time: "Monday, November 6th, 7:00 PM",
+    description:
+      "Join us to hear from a renowned scholar on the topic of faith and science.",
+    image: "/general.jpg",
+  },
+  {
+    title: "Academic sector",
+    time: "Every Wednesday at 5:00 PM",
+    description:
+      "Engage in scholarly discussions and workshops to enhance your research and study skills.",
+    image: "/academic.jpg",
+  },
+];
 
 const Home = () => {
   const navigate = useNavigate();
+
+  const [activeIndex, setActiveIndex] = useState(0);
+
+  const handleNext = () => {
+    setActiveIndex((current) => (current + 1) % sectors.length);
+  };
+
+  const handlePrev = () => {
+    setActiveIndex(
+      (current) => (current - 1 + sectors.length) % sectors.length
+    );
+  };
+
   return (
     <div className="bg-gray-50 font-inter ">
       <style>
@@ -145,114 +196,77 @@ const Home = () => {
           </div>
         </section>
 
-        <section id="Sector" className="bg-[#ECFDF5] py-16 md:py-24">
+        <section id="Sector" className="bg-[#ECFDF5] py-16 md:py-24 font-inter">
           <div className="container mx-auto px-4 md:px-8 max-w-7xl">
             <h2 className="text-3xl md:text-4xl font-bold text-[#006045] text-center mb-12">
               Sectors
             </h2>
-            <div className="flex overflow-x-auto gap-6 pb-6 scroll-container">
-              <div className="flex-shrink-0 w-80 bg-white rounded-xl card-shadow overflow-hidden transition transform hover:scale-105">
-                <img
-                  src="/qira'at.jpg"
-                  alt="qira'at Circle"
-                  className="w-full h-44 object-cover"
-                />
-                <div className="p-6">
-                  <h3 className="text-xl font-semibold text-[#006045] mb-2">
-                    Qira'at and Dawa sectors
-                  </h3>
-                  <p className="text-sm text-gray-600 mb-4">
-                    Every Tuesday at 6:00 PM
-                  </p>
-                  <p className="text-gray-700 text-sm mb-4">
-                    Join us for a discussion on scripture and its application in
-                    modern life.
-                  </p>
-                  <a
-                    href="#"
-                    className="inline-block bg-[#A4F4CF] text-[#006045] font-semibold py-2 px-4 rounded-lg hover:bg-[#85E2B6] transition text-sm"
-                  >
-                    Learn More
-                  </a>
+            <div className="relative">
+              <div className="overflow-hidden">
+                <div
+                  className="flex transition-transform duration-500 ease-in-out gap-6"
+                  style={{ transform: `translateX(-${activeIndex * 100}%)` }}
+                >
+                  {sectors.map((sector, index) => (
+                    <div
+                      key={index}
+                      className="flex-shrink-0 w-full md:w-80 bg-white rounded-xl card-shadow overflow-hidden transition transform hover:scale-105"
+                    >
+                      <img
+                        src={sector.image}
+                        alt={sector.title}
+                        className="w-full h-44 object-cover"
+                      />
+                      <div className="p-6">
+                        <h3 className="text-xl font-semibold text-[#006045] mb-2">
+                          {sector.title}
+                        </h3>
+                        <p className="text-sm text-gray-600 mb-4">
+                          {sector.time}
+                        </p>
+                        <p className="text-gray-700 text-sm mb-4">
+                          {sector.description}
+                        </p>
+                        <a
+                          href="#"
+                          className="inline-block bg-[#A4F4CF] text-[#006045] font-semibold py-2 px-4 rounded-lg hover:bg-[#85E2B6] transition text-sm"
+                        >
+                          Learn More
+                        </a>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
 
-              <div className="flex-shrink-0 w-80 bg-white rounded-xl card-shadow overflow-hidden transition transform hover:scale-105">
-                <img
-                  src="/finance.jpg"
-                  alt="finance Project"
-                  className="w-full h-44 object-cover"
-                />
-                <div className="p-6">
-                  <h3 className="text-xl font-semibold text-[#006045] mb-2">
-                    Social sector
-                  </h3>
-                  <p className="text-sm text-gray-600 mb-4">
-                    Saturday, October 28th, 9:00 AM
-                  </p>
-                  <p className="text-gray-700 text-sm mb-4">
-                    Help us give back by volunteering at the local community
-                    garden.
-                  </p>
-                  <a
-                    href="#"
-                    className="inline-block bg-[#A4F4CF] text-[#006045] font-semibold py-2 px-4 rounded-lg hover:bg-[#85E2B6] transition text-sm"
-                  >
-                    Learn More
-                  </a>
-                </div>
-              </div>
+              <button
+                onClick={handlePrev}
+                className="absolute left-0 top-1/2 -translate-y-1/2 bg-white/50 hover:bg-white p-2 rounded-full shadow-lg transition-all duration-300 transform -translate-x-1/2 focus:outline-none focus:ring-2 focus:ring-[#006045]"
+                aria-label="Previous slide"
+              >
+                <ChevronLeft className="h-6 w-6 text-[#006045]" />
+              </button>
+              <button
+                onClick={handleNext}
+                className="absolute right-0 top-1/2 -translate-y-1/2 bg-white/50 hover:bg-white p-2 rounded-full shadow-lg transition-all duration-300 transform translate-x-1/2 focus:outline-none focus:ring-2 focus:ring-[#006045]"
+                aria-label="Next slide"
+              >
+                <ChevronRight className="h-6 w-6 text-[#006045]" />
+              </button>
 
-              <div className="flex-shrink-0 w-80 bg-white rounded-xl card-shadow overflow-hidden transition transform hover:scale-105">
-                <img
-                  src="/social.jpg"
-                  alt="social sevice"
-                  className="w-full h-44 object-cover"
-                />
-                <div className="p-6">
-                  <h3 className="text-xl font-semibold text-[#006045] mb-2">
-                    Finance sector
-                  </h3>
-                  <p className="text-sm text-gray-600 mb-4">
-                    Monday, November 6th, 7:00 PM
-                  </p>
-                  <p className="text-gray-700 text-sm mb-4">
-                    Join us to hear from a renowned scholar on the topic of
-                    faith and science.
-                  </p>
-                  <a
-                    href="#"
-                    className="inline-block bg-[#A4F4CF] text-[#006045] font-semibold py-2 px-4 rounded-lg hover:bg-[#85E2B6] transition text-sm"
-                  >
-                    Learn More
-                  </a>
-                </div>
-              </div>
-
-              <div className="flex-shrink-0 w-80 bg-white rounded-xl card-shadow overflow-hidden transition transform hover:scale-105">
-                <img
-                  src="/general.jpg"
-                  alt="leaders"
-                  className="w-full h-44 object-cover"
-                />
-                <div className="p-6">
-                  <h3 className="text-xl font-semibold text-[#006045] mb-2">
-                    General Amir sector
-                  </h3>
-                  <p className="text-sm text-gray-600 mb-4">
-                    Monday, November 6th, 7:00 PM
-                  </p>
-                  <p className="text-gray-700 text-sm mb-4">
-                    Join us to hear from a renowned scholar on the topic of
-                    faith and science.
-                  </p>
-                  <a
-                    href="#"
-                    className="inline-block bg-[#A4F4CF] text-[#006045] font-semibold py-2 px-4 rounded-lg hover:bg-[#85E2B6] transition text-sm"
-                  >
-                    Learn More
-                  </a>
-                </div>
+              <div className="flex justify-center mt-6 gap-2">
+                {sectors.map((_, index) => (
+                  <button
+                    key={index}
+                    onClick={() => setActiveIndex(index)}
+                    className={`h-2 rounded-full transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-[#006045] ${
+                      index === activeIndex
+                        ? "bg-[#006045] w-6"
+                        : "bg-gray-300 w-2"
+                    }`}
+                    aria-label={`Go to slide ${index + 1}`}
+                  ></button>
+                ))}
               </div>
             </div>
           </div>
@@ -373,17 +387,22 @@ const Home = () => {
           </div>
 
           <div className="flex gap-4">
-            <a href="https://t.me/ASTU_MSJ" target="_blank">
+            <a
+              href="https://t.me/ASTU_MSJ"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
               <img
-                src="https://img.shields.io/static/v1?message=Telegram&logo=telegram&label=&color=2CA5E0&logoColor=white&labelColor=&style=for-the-badge"
-                height="30"
+                src="/telegram.svg"
+                alt="Telegram"
+                className="h-7 w-7  transition-transform duration-200 hover:scale-110"
               />
             </a>
             <a href="https://facebook.com" className="hover:text-blue-400">
-              <Facebook className="w-5 h-5" />
+              <Facebook className="w-7 h-7" />
             </a>
             <a href="https://instagram.com" className="hover:text-pink-400">
-              <Instagram className="w-5 h-5" />
+              <Instagram className="w-7 h-7" />
             </a>
           </div>
 
