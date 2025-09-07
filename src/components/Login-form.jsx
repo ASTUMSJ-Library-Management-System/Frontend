@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { useAuth } from "@/hooks/useAuth";
@@ -25,6 +25,7 @@ export function RegisterForm({ className, ...props }) {
 
   const navigate = useNavigate();
   const { register: registerUser } = useAuth();
+  const fileInputRef = useRef(null);
 
   const {
     register,
@@ -41,6 +42,13 @@ export function RegisterForm({ className, ...props }) {
       return;
     }
 
+    // Check if file is selected
+    const fileInput = fileInputRef.current;
+    if (!fileInput || !fileInput.files || !fileInput.files[0]) {
+      setError("Please select an ID picture");
+      return;
+    }
+
     setIsLoading(true);
     setError("");
     setSuccess("");
@@ -51,9 +59,14 @@ export function RegisterForm({ className, ...props }) {
     formData.append("department", department);
     formData.append("password", data.password);
 
-    // Append the ID picture file.
-    if (data.idPicture && data.idPicture[0]) {
-      formData.append("idPicture", data.idPicture[0]);
+    // Add the file to FormData (we already validated it exists above)
+    console.log("Adding file to FormData:", fileInput.files[0]);
+    formData.append("idPicture", fileInput.files[0]);
+
+    // Debug FormData contents
+    console.log("FormData entries:");
+    for (let [key, value] of formData.entries()) {
+      console.log(key, value);
     }
 
     try {
@@ -177,15 +190,9 @@ export function RegisterForm({ className, ...props }) {
                   id="idPicture"
                   type="file"
                   accept="image/*"
-                  {...register("idPicture", {
-                    required: "ID picture is required",
-                  })}
+                  ref={fileInputRef}
+                  required
                 />
-                {errors.idPicture && (
-                  <p className="text-red-500 text-xs">
-                    {errors.idPicture.message}
-                  </p>
-                )}
               </div>
 
               {/* Password */}

@@ -136,38 +136,26 @@ export default function Dashboard() {
           const res = await api.get("/admin/stats");
           if (isMounted) {
             const data = res.data;
-            const uniqueBooks = new Set(
-              (data.books ?? [])
-                .filter((b) => b.availableCopies > 0)
-                .map((b) => b.id)
-            ).size;
-            const totalAvailableCopies = (data.books ?? []).reduce(
-              (sum, b) => sum + (b.availableCopies || 0),
-              0
-            );
             setAdminStats({
-              ...data,
-              availableBooks: uniqueBooks,
-              availableCopies: totalAvailableCopies,
+              totalUsers: data.totalUsers,
+              totalBooks: data.totalBooks,
+              availableBooks: data.availableBooks, // Number of unique books with available copies
+              availableCopies: data.availableCopies, // Total number of available copies
+              pendingPayments: data.pendingPayments,
+              activeBorrows: data.activeBorrows,
+              overdueBorrows: data.overdueBorrows,
             });
           }
         } else {
           const res = await api.get("/user/me/summary");
           if (isMounted) {
             const data = res.data;
-            const uniqueBooks = new Set(
-              (data.books ?? [])
-                .filter((b) => b.availableCopies > 0)
-                .map((b) => b.id)
-            ).size;
-            const totalAvailableCopies = (data.books ?? []).reduce(
-              (sum, b) => sum + (b.availableCopies || 0),
-              0
-            );
             setMemberSummary({
-              ...data,
-              availableBooks: uniqueBooks,
-              availableCopies: totalAvailableCopies,
+              booksBorrowed: data.booksBorrowed,
+              availableBooks: data.availableBooks, // Number of unique books with available copies
+              availableCopies: data.availableCopies, // Total number of available copies
+              payment: data.payment,
+              currentBorrows: data.currentBorrows,
             });
           }
         }
@@ -229,22 +217,40 @@ export default function Dashboard() {
 
       {/* Stats */}
       {isAdmin ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
-          <StatCard title="Total Users" value={adminStats?.totalUsers} />
-          <StatCard
-            title="Available Books"
-            value={adminStats?.availableBooks}
-          />
-          <StatCard
-            title="Available Copies"
-            value={adminStats?.availableCopies}
-          />
+        <>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
+            <StatCard title="Total Users" value={adminStats?.totalUsers} />
+            <StatCard
+              title="Total Books"
+              value={adminStats?.totalBooks}
+            />
+            <StatCard
+              title="Available Books"
+              value={adminStats?.availableBooks}
+            />
+            <StatCard
+              title="Available Copies"
+              value={adminStats?.availableCopies}
+            />
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
           <StatCard
             title="Pending Payments"
             value={adminStats?.pendingPayments}
             color="yellow"
           />
+          <StatCard
+            title="Active Borrows"
+            value={adminStats?.activeBorrows}
+            color="green"
+          />
+          <StatCard
+            title="Overdue Books"
+            value={adminStats?.overdueBorrows}
+            color="red"
+          />
         </div>
+        </>
       ) : (
         <div>
           {renderPaymentBanner()}

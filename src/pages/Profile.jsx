@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { X } from "lucide-react";
@@ -6,6 +6,7 @@ import AppLayout from "../components/AppLayout";
 import { useAuth } from "@/hooks/useAuth";
 import { motion as Motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
+import { api } from "@/lib/api";
 
 const formatDate = (date) => {
   return new Date(date).toISOString().split("T")[0];
@@ -50,6 +51,7 @@ export default function ProfilePage() {
   const { user } = useAuth();
   const [editOpen, setEditOpen] = useState(false);
   const [passwordOpen, setPasswordOpen] = useState(false);
+  const [paymentStatus, setPaymentStatus] = useState("Pending");
 
   const today = formatDate(new Date());
   const oneMonthLater = formatDate(
@@ -64,7 +66,7 @@ export default function ProfilePage() {
     phone: user?.phone || "N/A",
     joinDate: user?.joinDate || today,
     membershipExpiry: user?.membershipExpiry || oneMonthLater,
-    status: user?.status || "Pending",
+    status: paymentStatus,
     photo: user?.photo || "",
   });
 
@@ -73,6 +75,24 @@ export default function ProfilePage() {
     newPassword: "",
     confirm: "",
   });
+
+  // Fetch payment status from API
+  useEffect(() => {
+    const fetchPaymentStatus = async () => {
+      try {
+        const response = await api.get("/user/me/summary");
+        const status = response.data.payment?.status || "Pending";
+        setPaymentStatus(status);
+        setProfile(prev => ({ ...prev, status }));
+      } catch (error) {
+        console.error("Failed to fetch payment status:", error);
+      }
+    };
+
+    if (user) {
+      fetchPaymentStatus();
+    }
+  }, [user]);
 
   const handleProfileSave = (e) => {
     e.preventDefault();
@@ -144,7 +164,7 @@ export default function ProfilePage() {
                     </div>
                     <span
                       className={`mt-1 text-xs px-2 py-0.5 rounded-md font-medium w-fit ${
-                        profile.status === "Active"
+                        profile.status.toLowerCase() === "Approved".toLowerCase() || profile.status.toLowerCase() ==="Active".toLowerCase()
                           ? "bg-green-100 text-green-700"
                           : "bg-yellow-100 text-yellow-700"
                       }`}

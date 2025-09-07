@@ -10,7 +10,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { motion as Motion, AnimatePresence } from "framer-motion";
-import { borrowAPI } from "../lib/api";
+import { borrowAPI, reviewAPI } from "../lib/api";
 import { toast, Toaster } from "sonner";
 
 export default function MyBooks() {
@@ -21,10 +21,11 @@ export default function MyBooks() {
   const [statusFilter, setStatusFilter] = useState("All");
 
   const [rating, setRating] = useState(0);
-  const [comments, setComments] = useState([]);
-  const [newComment, setNewComment] = useState("");
-  const [editingCommentId, setEditingCommentId] = useState(null);
-  const [editingText, setEditingText] = useState("");
+  const [comment, setComment] = useState("");
+  const [reviews, setReviews] = useState([]);
+  const [reviewStats, setReviewStats] = useState(null);
+  const [userReview, setUserReview] = useState(null);
+  const [reviewLoading, setReviewLoading] = useState(false);
 
   useEffect(() => {
     fetchMyBorrows();
@@ -56,43 +57,74 @@ export default function MyBooks() {
     }
   };
 
-  const handleRate = (star) => {
-    setRating((prev) => {
-      if (prev === star) {
-        toast.info("⭐ Your rating has been removed.");
-        return star - 1;
+  const fetchBookReviews = async (bookId) => {
+    try {
+      setReviewLoading(true);
+      const [reviewsData, statsData, userReviewData] = await Promise.all([
+        reviewAPI.getBookReviews(bookId, 1, 10),
+        reviewAPI.getBookReviewStats(bookId),
+        reviewAPI.getUserReview(bookId),
+      ]);
+      
+      setReviews(reviewsData.reviews);
+      setReviewStats(statsData);
+      setUserReview(userReviewData);
+      
+      if (userReviewData) {
+        setRating(userReviewData.rating);
+        setComment(userReviewData.comment);
       } else {
-        toast.success(`⭐ You rated this book ${star} out of 5!`);
-        return star;
+        setRating(0);
+        setComment("");
       }
-    });
+    } catch (error) {
+      console.error("Error fetching reviews:", error);
+      toast.error("Failed to load reviews");
+    } finally {
+      setReviewLoading(false);
+    }
   };
 
-  const handleAddComment = () => {
-    if (!newComment.trim()) return;
-    const newEntry = { id: Date.now(), text: newComment };
-    setComments([...comments, newEntry]);
-    setNewComment("");
-    toast.success("💬 Your thoughts were added.");
+  const handleRate = (star) => {
+    setRating(star);
   };
 
-  const handleDeleteComment = (id) => {
-    setComments(comments.filter((c) => c.id !== id));
-    toast.success("🗑️ Comment removed.");
+  const handleSaveReview = async () => {
+    if (!selectedBook || !rating || !comment.trim()) {
+      toast.error("Please provide both rating and comment");
+      return;
+    }
+
+    try {
+      setReviewLoading(true);
+      await reviewAPI.createOrUpdateReview(selectedBook.bookId._id, rating, comment);
+      await fetchBookReviews(selectedBook.bookId._id);
+      toast.success("⭐ Your review has been saved!");
+    } catch (error) {
+      console.error("Error saving review:", error);
+      toast.error(error.message || "Failed to save review");
+    } finally {
+      setReviewLoading(false);
+    }
   };
 
-  const handleEditComment = (id, text) => {
-    setEditingCommentId(id);
-    setEditingText(text);
-  };
+  const handleDeleteReview = async () => {
+    if (!userReview) return;
 
-  const handleSaveComment = (id) => {
-    setComments(
-      comments.map((c) => (c.id === id ? { ...c, text: editingText } : c))
-    );
-    setEditingCommentId(null);
-    setEditingText("");
-    toast.success("✏️ Comment updated successfully.");
+    try {
+      setReviewLoading(true);
+      await reviewAPI.deleteReview(userReview._id);
+      setUserReview(null);
+      setRating(0);
+      setComment("");
+      await fetchBookReviews(selectedBook.bookId._id);
+      toast.success("🗑️ Review deleted successfully");
+    } catch (error) {
+      console.error("Error deleting review:", error);
+      toast.error(error.message || "Failed to delete review");
+    } finally {
+      setReviewLoading(false);
+    }
   };
 
   const counts = useMemo(() => {
@@ -279,8 +311,7 @@ export default function MyBooks() {
                   <button
                     onClick={() => {
                       setSelectedBook(book);
-                      setRating(0);
-                      setComments([]);
+                      fetchBookReviews(book.bookId._id);
                     }}
                     className="flex-1 bg-[#D0FAE5] text-gray-800 px-4 py-2 rounded-lg font-medium
                                hover:bg-[#A8EFD1] transition flex items-center justify-center gap-2"
@@ -369,91 +400,149 @@ export default function MyBooks() {
                 className="w-full h-60 object-contain bg-gray-50 mb-6"
               />
 
-              {/* Rating */}
+              {/* Review Statistics */}
+              {reviewStats && (
+                <div className="mb-6 p-4 bg-gray-50 rounded-lg">
+                  <h3 className="font-semibold text-gray-700 mb-2">Book Rating</h3>
+                  <div className="flex items-center gap-4">
+                    <div className="text-3xl font-bold text-[#009966]">
+                      {reviewStats.averageRating.toFixed(1)}
+                    </div>
+                    <div className="flex gap-1">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <Star
+                          key={star}
+                          className={`h-5 w-5 ${
+                            star <= Math.round(reviewStats.averageRating)
+                              ? "text-yellow-400 fill-yellow-400"
+                              : "text-gray-300"
+                          }`}
+                        />
+                      ))}
+                    </div>
+                    <div className="text-sm text-gray-600">
+                      ({reviewStats.totalReviews} review{reviewStats.totalReviews !== 1 ? 's' : ''})
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* User Review Section */}
               <div className="mb-6">
                 <h3 className="font-semibold text-gray-700 mb-2">
-                  Rate this book:
+                  {userReview ? "Your Review" : "Write a Review"}
                 </h3>
-                <div className="flex gap-2">
+                
+                {/* Rating */}
+                <div className="flex gap-2 mb-4">
                   {[1, 2, 3, 4, 5].map((star) => (
                     <button
                       key={star}
                       onClick={() => handleRate(star)}
                       className="focus:outline-none"
+                      disabled={reviewLoading}
                     >
                       <Star
                         className={`h-7 w-7 transition-transform ${
                           rating >= star
                             ? "text-yellow-400 fill-yellow-400"
                             : "text-gray-300"
-                        } hover:scale-110`}
+                        } hover:scale-110 ${reviewLoading ? 'opacity-50' : ''}`}
                       />
                     </button>
                   ))}
                 </div>
+
+                {/* Comment */}
+                <div className="flex gap-2 mb-4">
+                  <textarea
+                    value={comment}
+                    onChange={(e) => setComment(e.target.value)}
+                    placeholder="Write your review..."
+                    className="flex-1 px-3 py-2 border border-[#A4F4CF] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#009966] resize-none"
+                    rows={3}
+                    disabled={reviewLoading}
+                  />
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex gap-2">
+                  <button
+                    onClick={handleSaveReview}
+                    disabled={reviewLoading || !rating || !comment.trim()}
+                    className="px-4 py-2 bg-[#009966] text-white rounded-lg hover:bg-[#007a52] disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                  >
+                    {reviewLoading ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                        Saving...
+                      </>
+                    ) : (
+                      <>
+                        <Star size={16} />
+                        {userReview ? "Update Review" : "Save Review"}
+                      </>
+                    )}
+                  </button>
+                  
+                  {userReview && (
+                    <button
+                      onClick={handleDeleteReview}
+                      disabled={reviewLoading}
+                      className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                    >
+                      <Trash2 size={16} />
+                      Delete
+                    </button>
+                  )}
+                </div>
               </div>
 
-              {/* Comments */}
+              {/* Other Reviews */}
               <div>
-                <h3 className="font-semibold text-gray-700 mb-2">Comments:</h3>
-                <div className="flex gap-2 mb-4">
-                  <input
-                    type="text"
-                    value={newComment}
-                    onChange={(e) => setNewComment(e.target.value)}
-                    placeholder="Write a comment..."
-                    className="flex-1 px-3 py-2 border border-[#A4F4CF] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#009966]"
-                  />
-                  <button
-                    onClick={handleAddComment}
-                    className="px-4 py-2 bg-[#009966] text-white rounded-lg hover:bg-[#007a52]"
-                  >
-                    Add
-                  </button>
-                </div>
-
-                <div className="space-y-3">
-                  {comments.map((c) => (
-                    <div
-                      key={c.id}
-                      className="flex justify-between items-center border border-[#A4F4CF] rounded-lg p-2"
-                    >
-                      {editingCommentId === c.id ? (
-                        <div className="flex-1 flex gap-2">
-                          <input
-                            value={editingText}
-                            onChange={(e) => setEditingText(e.target.value)}
-                            className="flex-1 px-2 py-1 border border-[#A4F4CF] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#009966]"
-                          />
-                          <button
-                            onClick={() => handleSaveComment(c.id)}
-                            className="px-3 py-1 bg-[#009966] text-white rounded-lg text-sm"
-                          >
-                            Save
-                          </button>
-                        </div>
-                      ) : (
-                        <>
-                          <span>{c.text}</span>
-                          <div className="flex gap-2">
-                            <button
-                              onClick={() => handleEditComment(c.id, c.text)}
-                              className="text-gray-500 hover:text-[#009966]"
-                            >
-                              <Pencil size={16} />
-                            </button>
-                            <button
-                              onClick={() => handleDeleteComment(c.id)}
-                              className="text-gray-500 hover:text-red-500"
-                            >
-                              <Trash2 size={16} />
-                            </button>
+                <h3 className="font-semibold text-gray-700 mb-2">
+                  Other Reviews ({reviews.length})
+                </h3>
+                
+                {reviewLoading ? (
+                  <div className="flex justify-center py-4">
+                    <div className="w-6 h-6 border-2 border-[#009966] border-t-transparent rounded-full animate-spin"></div>
+                  </div>
+                ) : reviews.length === 0 ? (
+                  <p className="text-gray-500 text-center py-4">No reviews yet</p>
+                ) : (
+                  <div className="space-y-3 max-h-64 overflow-y-auto">
+                    {reviews.map((review) => (
+                      <div
+                        key={review._id}
+                        className="border border-[#A4F4CF] rounded-lg p-3"
+                      >
+                        <div className="flex items-center gap-2 mb-2">
+                          <div className="font-medium text-sm">
+                            {review.user?.name || "Anonymous"}
                           </div>
-                        </>
-                      )}
-                    </div>
-                  ))}
-                </div>
+                          <div className="flex gap-1">
+                            {[1, 2, 3, 4, 5].map((star) => (
+                              <Star
+                                key={star}
+                                className={`h-4 w-4 ${
+                                  star <= review.rating
+                                    ? "text-yellow-400 fill-yellow-400"
+                                    : "text-gray-300"
+                                }`}
+                              />
+                            ))}
+                          </div>
+                          <div className="text-xs text-gray-500">
+                            {new Date(review.createdAt).toLocaleDateString()}
+                            {review.isEdited && " (edited)"}
+                          </div>
+                        </div>
+                        <p className="text-sm text-gray-700">{review.comment}</p>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </Motion.div>
           </Motion.div>

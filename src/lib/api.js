@@ -1,24 +1,30 @@
 import axios from "axios";
 
 // Create axios instance
-const api = axios.create({
+export const api = axios.create({
   baseURL: "http://localhost:5000/api", // Adjust this to match your backend URL
   headers: {
     "Content-Type": "application/json",
   },
 });
 
+// Create separate axios instance for FormData requests
+const apiFormData = axios.create({
+  baseURL: "http://localhost:5000/api",
+  // No default Content-Type header - let browser set it for FormData
+});
+
 // Request interceptor to add auth token
-api.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem("token");
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-  },
-  (error) => Promise.reject(error)
-);
+const addAuthToken = (config) => {
+  const token = localStorage.getItem("token");
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+};
+
+api.interceptors.request.use(addAuthToken, (error) => Promise.reject(error));
+apiFormData.interceptors.request.use(addAuthToken, (error) => Promise.reject(error));
 
 // Response interceptor to handle token expiration
 api.interceptors.response.use(
@@ -56,7 +62,9 @@ export const authAPI = {
 
   register: async (userData) => {
     try {
-      const response = await api.post("/auth/register", userData);
+      // Use FormData instance for FormData requests, regular instance for JSON
+      const client = userData instanceof FormData ? apiFormData : api;
+      const response = await client.post("/auth/register", userData);
       return response.data;
     } catch (error) {
       if (error.response?.data?.message)
@@ -376,6 +384,107 @@ export const studentPaymentAPI = {
       if (error.response?.data?.message)
         throw new Error(error.response.data.message);
       else throw new Error("Failed to check payment status.");
+    }
+  },
+};
+
+// ================= REVIEW API =================
+export const reviewAPI = {
+  // Create or update a review
+  createOrUpdateReview: async (bookId, rating, comment) => {
+    try {
+      const response = await api.post("/reviews", {
+        bookId,
+        rating,
+        comment,
+      });
+      return response.data;
+    } catch (error) {
+      if (error.response?.data?.message)
+        throw new Error(error.response.data.message);
+      else throw new Error("Failed to save review.");
+    }
+  },
+
+  // Get all reviews for a specific book
+  getBookReviews: async (bookId, page = 1, limit = 10, sortBy = "createdAt", sortOrder = "desc") => {
+    try {
+      const response = await api.get(`/reviews/book/${bookId}`, {
+        params: { page, limit, sortBy, sortOrder },
+      });
+      return response.data;
+    } catch (error) {
+      if (error.response?.data?.message)
+        throw new Error(error.response.data.message);
+      else throw new Error("Failed to fetch book reviews.");
+    }
+  },
+
+  // Get user's review for a specific book
+  getUserReview: async (bookId) => {
+    try {
+      const response = await api.get(`/reviews/book/${bookId}/user`);
+      return response.data;
+    } catch (error) {
+      if (error.response?.status === 404) {
+        return null; // User hasn't reviewed this book yet
+      }
+      if (error.response?.data?.message)
+        throw new Error(error.response.data.message);
+      else throw new Error("Failed to fetch user review.");
+    }
+  },
+
+  // Get all reviews by the authenticated user
+  getUserReviews: async (page = 1, limit = 10) => {
+    try {
+      const response = await api.get("/reviews/user", {
+        params: { page, limit },
+      });
+      return response.data;
+    } catch (error) {
+      if (error.response?.data?.message)
+        throw new Error(error.response.data.message);
+      else throw new Error("Failed to fetch user reviews.");
+    }
+  },
+
+  // Get book review statistics
+  getBookReviewStats: async (bookId) => {
+    try {
+      const response = await api.get(`/reviews/book/${bookId}/stats`);
+      return response.data;
+    } catch (error) {
+      if (error.response?.data?.message)
+        throw new Error(error.response.data.message);
+      else throw new Error("Failed to fetch review statistics.");
+    }
+  },
+
+  // Update a specific review
+  updateReview: async (reviewId, rating, comment) => {
+    try {
+      const response = await api.put(`/reviews/${reviewId}`, {
+        rating,
+        comment,
+      });
+      return response.data;
+    } catch (error) {
+      if (error.response?.data?.message)
+        throw new Error(error.response.data.message);
+      else throw new Error("Failed to update review.");
+    }
+  },
+
+  // Delete a specific review
+  deleteReview: async (reviewId) => {
+    try {
+      const response = await api.delete(`/reviews/${reviewId}`);
+      return response.data;
+    } catch (error) {
+      if (error.response?.data?.message)
+        throw new Error(error.response.data.message);
+      else throw new Error("Failed to delete review.");
     }
   },
 };
