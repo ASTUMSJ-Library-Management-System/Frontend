@@ -19,7 +19,6 @@ export function RegisterForm({ className, ...props }) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
-  const [department, setDepartment] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
@@ -37,11 +36,6 @@ export function RegisterForm({ className, ...props }) {
   const password = watch("password");
 
   const onSubmit = async (data) => {
-    if (!department) {
-      setError("Please select a department");
-      return;
-    }
-
     // Check if file is selected
     const fileInput = fileInputRef.current;
     if (!fileInput || !fileInput.files || !fileInput.files[0]) {
@@ -56,7 +50,8 @@ export function RegisterForm({ className, ...props }) {
     const formData = new FormData();
     formData.append("name", data.name);
     formData.append("email", data.email);
-    formData.append("department", department);
+    formData.append("studentId", data.studentId || ""); // Send empty string if not provided
+    formData.append("department", data.department);
     formData.append("password", data.password);
 
     // Add the file to FormData (we already validated it exists above)
@@ -166,21 +161,44 @@ export function RegisterForm({ className, ...props }) {
                 )}
               </div>
 
+              {/* Student ID */}
+              <div className="grid gap-2">
+                <Label htmlFor="studentId">Student ID</Label>
+                <Input
+                  id="studentId"
+                  type="text"
+                  placeholder="Enter your student ID"
+                  {...register("studentId", {
+                    required: "Student ID is required",
+                  })}
+                />
+                {errors.studentId && (
+                  <p className="text-red-500 text-xs">
+                    {errors.studentId.message}
+                  </p>
+                )}
+              </div>
+
               {/* Department */}
               <div className="grid gap-2">
                 <Label htmlFor="department">Department</Label>
                 <select
-                  value={department}
-                  onChange={(e) => setDepartment(e.target.value)}
+                  id="department"
+                  {...register("department", {
+                    required: "Department is required",
+                  })}
                   className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-green-500 focus:border-green-500 sm:text-sm"
                 >
                   <option value="">Select your department</option>
                   {departments.map((dept) => (
-                    <option key={dept.value} value={dept.value}>
+                    <option key={dept.value} value={dept.label}>
                       {dept.label}
                     </option>
                   ))}
                 </select>
+                {errors.department && (
+                  <p className="text-red-500 text-xs">{errors.department.message}</p>
+                )}
               </div>
 
               {/* ID Picture */}

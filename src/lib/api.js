@@ -83,6 +83,19 @@ export const authAPI = {
     }
   },
 
+  logout: async () => {
+    // This function handles client-side logout logic.
+    // It's designed to be called from the useAuth hook.
+    console.log("Redirecting to home and then clearing user session.");
+
+    // 1. Redirect first to prevent other components from making API calls
+    //    after the token is removed, which would trigger the 401 interceptor.
+    window.location.href = "/";
+
+    // 2. Clear the session data from local storage after the redirect has been initiated.
+    localStorage.clear(); // Clear all items for a clean logout
+  },
+
   refreshToken: async (refreshToken) => {
     try {
       const response = await api.post("/auth/refresh-token", { refreshToken });

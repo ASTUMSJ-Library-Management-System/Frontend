@@ -380,7 +380,15 @@ export default function MyBooks() {
                 </div>
                 <div>
                   <span className="font-medium">ISBN:</span>{" "}
-                  {selectedBook.bookId?.isbn || "Unknown"}
+                  {selectedBook.bookId?.ISBN || selectedBook.bookId?.isbn || "Unknown"}
+                </div>
+                <div>
+                  <span className="font-medium">Category:</span>{" "}
+                  {selectedBook.bookId?.category || "Unknown"}
+                </div>
+                <div>
+                  <span className="font-medium">Publication Year:</span>{" "}
+                  {selectedBook.bookId?.publicationYear || "Unknown"}
                 </div>
                 <div>
                   <span className="font-medium">Status:</span>{" "}

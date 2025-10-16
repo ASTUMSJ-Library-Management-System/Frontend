@@ -60,7 +60,7 @@ export default function ManageBooks() {
   const handleDelete = async (id) => {
     toast((t) => (
       <div className="flex items-center gap-3">
-        <span>Are you sure you want to delete this book?</span>
+        <span> sure you want to delete this book?</span>
         <div className="flex gap-2">
           <button
             onClick={async () => {
@@ -143,7 +143,7 @@ export default function ManageBooks() {
       return true;
     } catch (error) {
       console.error(error);
-      toast.error("Failed to save book.");
+      toast.error(error.message || "Failed to save book.");
       return false;
     }
   };

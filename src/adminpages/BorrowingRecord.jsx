@@ -110,9 +110,11 @@ export default function BorrowingRecords() {
           </div>
 
           <div className="flex gap-4 items-center bg-[#F9FFFB] p-3 rounded-lg shadow-sm">
-            <div className="w-16 h-20 bg-gray-200 flex items-center justify-center text-gray-500 rounded-md text-sm">
-              No Cover
-            </div>
+            <img
+              src={record.bookId?.image || "https://via.placeholder.com/60x80"}
+              alt={record.bookId?.title || "Book"}
+              className="w-16 h-20 object-contain bg-white rounded-md border"
+            />
             <div>
               <p className="font-semibold text-[#016549] text-lg">
                 {record.bookId?.title || "Unknown Book"}
@@ -159,6 +161,25 @@ export default function BorrowingRecords() {
                 {record.status}
               </span>
             </p>
+            <div className="grid grid-cols-2 gap-2 text-sm text-gray-600 mt-2">
+              <div>
+                <span className="font-semibold">ISBN:</span> {record.bookId?.ISBN || record.bookId?.isbn || "Unknown"}
+              </div>
+              <div>
+                <span className="font-semibold">Language:</span> {record.bookId?.language || "Unknown"}
+              </div>
+              <div>
+                <span className="font-semibold">Category:</span> {record.bookId?.category || "Unknown"}
+              </div>
+              <div>
+                <span className="font-semibold">Year:</span> {record.bookId?.publicationYear || "Unknown"}
+              </div>
+            </div>
+            {record.bookId?.description && (
+              <p className="text-sm text-gray-700 mt-2">
+                {record.bookId.description}
+              </p>
+            )}
           </div>
 
           <div className="mt-6 flex gap-3 justify-end">
