@@ -2,7 +2,7 @@ import axios from "axios";
 
 // Create axios instance
 export const api = axios.create({
-  baseURL: "http://localhost:5000/api", // Adjust this to match your backend URL
+  baseURL: "https://backend-m3la.onrender.com/api", // Adjust this to match your backend URL
   headers: {
     "Content-Type": "application/json",
   },
@@ -10,7 +10,7 @@ export const api = axios.create({
 
 // Create separate axios instance for FormData requests
 const apiFormData = axios.create({
-  baseURL: "http://localhost:5000/api",
+  baseURL: "https://backend-m3la.onrender.com/api",
   // No default Content-Type header - let browser set it for FormData
 });
 
