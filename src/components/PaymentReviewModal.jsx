@@ -4,8 +4,8 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/Dialog.jsx";
-import { Button } from "@/components/ui/Button.jsx";
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 import { Toaster, toast } from "sonner";
 
 export default function PaymentReviewModal({ isOpen, onClose, paymentData, onStatusUpdate }) {
@@ -20,16 +20,6 @@ export default function PaymentReviewModal({ isOpen, onClose, paymentData, onSta
       onClose();
     } catch (error) {
       toast.error("Failed to approve payment: " + error.message);
-    }
-  };
-
-  const handleReject = async () => {
-    try {
-      await onStatusUpdate(paymentData._id, "Rejected");
-      toast.success("Payment rejected successfully!");
-      onClose();
-    } catch (error) {
-      toast.error("Failed to reject payment: " + error.message);
     }
   };
 
@@ -101,18 +91,12 @@ export default function PaymentReviewModal({ isOpen, onClose, paymentData, onSta
           </div>
 
           {/* Action Buttons */}
-          <div className="flex justify-between items-center mt-6">
+          <div className="flex justify-end items-center mt-6">
             <Button
               onClick={handleApprove}
-              className="bg-[#09B255] mr-3 text-white font-medium gap-3 rounded-lg px-6 hover:bg-[#057435]"
+              className="bg-[#09B255] text-white font-medium gap-3 rounded-lg px-6 hover:bg-[#057435]"
             >
               Approve Payment
-            </Button>
-            <Button
-              onClick={handleReject}
-              className="bg-[#ffffff] ml-3 text-[#B80808] border-[#B80808] font-medium rounded-lg px-6 hover:bg-[#FFB7B4CF] hover:text-[#B80808] hover:border-[#B80808]"
-            >
-              Reject Payment
             </Button>
           </div>
         </DialogContent>
