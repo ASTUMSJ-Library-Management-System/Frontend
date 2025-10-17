@@ -1,7 +1,7 @@
 import React from "react";
 import { NavLink } from "react-router-dom";
 import { cn } from "@/lib/utils";
-import Button from "@/components/ui/Button.jsx";
+import { Button } from "@/components/ui/Button.jsx";
 import { Book, LayoutDashboard, Users } from "lucide-react";
 
 const navItems = [
@@ -32,10 +32,12 @@ export function Sidebar({ className }) {
                   )
                 }
               >
-                <Button variant={isActive ? "secondary" : "ghost"} className="w-full justify-start">
-                  <item.icon className="mr-2 h-4 w-4" />
-                  {item.label}
-                </Button>
+                {({ isActive }) => (
+                  <Button variant={isActive ? "secondary" : "ghost"} className="w-full justify-start">
+                    <item.icon className="mr-2 h-4 w-4" />
+                    {item.label}
+                  </Button>
+                )}
               </NavLink>
             ))}
           </div>
