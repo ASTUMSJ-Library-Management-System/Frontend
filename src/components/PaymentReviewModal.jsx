@@ -5,7 +5,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/Button";
+import { Button } from "@/components/ui/button.jsx";
 import { Toaster, toast } from "sonner";
 
 export default function PaymentReviewModal({ isOpen, onClose, paymentData, onStatusUpdate }) {
