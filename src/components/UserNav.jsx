@@ -7,9 +7,9 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+} from "@/components/ui/dropdown-menu.jsx";
 import { Button } from "@/components/ui/button.jsx";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar.jsx";
 import { LogOut, User } from "lucide-react";
 
 export function UserNav() {

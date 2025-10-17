@@ -4,7 +4,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
+} from "@/components/ui/dialog.jsx";
 import { Button } from "@/components/ui/button.jsx";
 import { Toaster, toast } from "sonner";
 
