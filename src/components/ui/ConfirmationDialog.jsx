@@ -9,7 +9,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "@/components/ui/Alert-dialog.jsx";
+} from "@/components/ui/AlertDialog.jsx";
 import { Button } from "@/components/ui/Button.jsx";
 
 /**
