@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import React, { useState, useEffect } from "react";
+import React from "react";
 import { Facebook, Instagram, Menu } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger, SheetClose } from "@/components/ui/sheet.jsx";
 import { Button } from "@/components/ui/Button";
@@ -9,7 +9,7 @@ import {
   CarouselItem,
   CarouselNext,
   CarouselPrevious,
-} from "@/components/ui/carousel";
+} from "@/components/ui/carousel.jsx";
 
 const sectors = [
   {
@@ -24,14 +24,14 @@ const sectors = [
     time: "Saturday, October 28th, 9:00 AM",
     description:
       "Participate in events focused on community service, charity, and social welfare projects.",
-    image: "/finance.jpg",
+    image: "/social.jpg",
   },
   {
     title: "Finance sector",
     time: "Monday, November 6th, 7:00 PM",
     description:
       "Learn about ethical finance, wealth management, and investment strategies that align with your values.",
-    image: "/social.jpg",
+    image: "/finance.jpg",
   },
   {
     title: "General Amir sector",
@@ -53,7 +53,7 @@ const Home = () => {
   const navigate = useNavigate();
 
   return (
-    <div className="bg-gray-50 font-inter ">
+    <div className="bg-gray-50 font-inter">
       <style>
         {`
           html {
@@ -62,15 +62,16 @@ const Home = () => {
         `}
       </style>
 
-      <header className="relative flex-shrink-0 h-screen w-80% overflow-hidden">
+      {/* Header Section */}
+      <header className="relative flex-shrink-0 h-screen w-full overflow-hidden">
         <img
           src="/aqsa.jpg"
           alt="Al Aqsa Mosque"
-          className="absolute  inset-0 w-full h-full object-cover z-0"
+          className="absolute inset-0 w-full h-full object-cover z-0"
         />
+        <div className="absolute inset-0 opacity-60 z-10 bg-black"></div>
 
-        <div className="absolute inset-0  opacity-60 z-10"></div>
-
+        {/* Navigation */}
         <nav className="fixed top-0 left-0 right-0 p-4 md:p-6 flex justify-between rounded-3xl mt-4 mx-3 items-center z-50 bg-[#006045] shadow-lg">
           {/* Logo and Brand Name */}
           <div className="flex items-center gap-3">
@@ -78,7 +79,7 @@ const Home = () => {
             <span className="text-xl font-bold text-white">ASTUMSJ</span>
           </div>
 
-          {/* Desktop Navigation */}
+          {/* Desktop Nav Links */}
           <div className="hidden md:flex items-center gap-8 text-white">
             <a href="#about" className="hover:text-green-200 transition">
               About
@@ -93,16 +94,21 @@ const Home = () => {
               Contact
             </a>
           </div>
+
+          {/* Desktop Buttons */}
           <div className="hidden md:flex items-center gap-4">
             <Button variant="secondary" onClick={() => navigate("/login")}>
               Log In
             </Button>
-            <Button className="bg-[#A4F4CF] text-[#006045] hover:bg-[#85E2B6]" onClick={() => navigate("/register")}>
+            <Button
+              className="bg-[#A4F4CF] text-[#006045] hover:bg-[#85E2B6]"
+              onClick={() => navigate("/register")}
+            >
               Sign Up
             </Button>
           </div>
 
-          {/* Mobile Navigation (Hamburger Menu) */}
+          {/* Mobile Hamburger Menu */}
           <div className="md:hidden">
             <Sheet>
               <SheetTrigger asChild>
@@ -121,7 +127,12 @@ const Home = () => {
                       <Button variant="secondary" onClick={() => navigate("/login")}>Log In</Button>
                     </SheetClose>
                     <SheetClose asChild>
-                      <Button className="bg-[#A4F4CF] text-[#006045] hover:bg-[#85E2B6]" onClick={() => navigate("/register")}>Sign Up</Button>
+                      <Button
+                        className="bg-[#A4F4CF] text-[#006045] hover:bg-[#85E2B6]"
+                        onClick={() => navigate("/register")}
+                      >
+                        Sign Up
+                      </Button>
                     </SheetClose>
                   </div>
                 </div>
@@ -130,8 +141,9 @@ const Home = () => {
           </div>
         </nav>
 
+        {/* Header Text */}
         <div className="relative z-20 text-center text-white flex flex-col items-center justify-center h-full px-4 pt-24">
-          <h1 className="text-4xl md:text-6xl  font-extrabold mb-4 leading-tight drop-shadow-md">
+          <h1 className="text-4xl md:text-6xl font-extrabold mb-4 leading-tight drop-shadow-md">
             A Community of Faith and Learning
           </h1>
           <p className="text-lg md:text-xl font-medium mb-8">
@@ -140,7 +152,9 @@ const Home = () => {
         </div>
       </header>
 
+      {/* Main Section */}
       <main className="py-16 md:py-24">
+        {/* About Section */}
         <section
           id="about"
           className="container mx-auto px-4 md:px-8 max-w-7xl mb-24"
@@ -149,6 +163,7 @@ const Home = () => {
             Our Mission
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {/* Community Card */}
             <div className="bg-white rounded-xl shadow-lg p-8 text-center transition transform hover:scale-105">
               <div className="h-16 w-16 bg-[#009966] text-white rounded-full flex items-center justify-center mx-auto mb-4">
                 <svg
@@ -172,6 +187,7 @@ const Home = () => {
                 can connect and grow together in faith.
               </p>
             </div>
+            {/* Education Card */}
             <div className="bg-white rounded-xl shadow-lg p-8 text-center transition transform hover:scale-105">
               <div className="h-16 w-16 bg-[#009966] text-white rounded-full flex items-center justify-center mx-auto mb-4">
                 <svg
@@ -197,6 +213,7 @@ const Home = () => {
                 our faith's teachings and scriptures.
               </p>
             </div>
+            {/* Service Card */}
             <div className="bg-white rounded-xl shadow-lg p-8 text-center transition transform hover:scale-105">
               <div className="h-16 w-16 bg-[#009966] text-white rounded-full flex items-center justify-center mx-auto mb-4">
                 <svg
@@ -223,7 +240,8 @@ const Home = () => {
           </div>
         </section>
 
-        <section id="sectors" className="bg-[#ECFDF5] py-16 md:py-24 font-inter">
+        {/* Sectors Carousel */}
+        <section id="sectors" className="bg-[#ECFDF5] py-16 md:py-24">
           <div className="container mx-auto px-4 md:px-8 max-w-7xl">
             <h2 className="text-3xl md:text-4xl font-bold text-[#006045] text-center mb-12">
               Sectors
@@ -249,16 +267,17 @@ const Home = () => {
                           className="w-full h-44 object-cover"
                         />
                         <div className="p-6 flex flex-col flex-grow">
-                          <h3 className="text-xl font-semibold text-[#006045] mb-2">
-                            {sector.title}
-                          </h3>
+                          <h3 className="text-xl font-semibold text-[#006045] mb-2">{sector.title}</h3>
                           <p className="text-sm text-gray-600 mb-4">
                             {sector.time}
                           </p>
                           <p className="text-gray-700 text-sm mb-4 flex-grow">
                             {sector.description}
                           </p>
-                          <a href="#" className="mt-auto inline-block bg-[#A4F4CF] text-[#006045] font-semibold py-2 px-4 rounded-lg hover:bg-[#85E2B6] transition text-sm text-center">
+                          <a
+                            href="#"
+                            className="mt-auto inline-block bg-[#A4F4CF] text-[#006045] font-semibold py-2 px-4 rounded-lg hover:bg-[#85E2B6] transition text-sm text-center"
+                          >
                             Learn More
                           </a>
                         </div>
@@ -273,6 +292,7 @@ const Home = () => {
           </div>
         </section>
 
+        {/* Resources Section */}
         <section
           id="resources"
           className="container mx-auto px-4 md:px-8 max-w-7xl py-16 md:py-24"
@@ -281,6 +301,7 @@ const Home = () => {
             Our Resources
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {/* Tutorial Schedule */}
             <a
               href="#"
               className="bg-white p-6 rounded-xl shadow-lg flex items-center gap-4 hover:bg-green-50 transition transform hover:scale-105"
@@ -308,6 +329,7 @@ const Home = () => {
                 </p>
               </div>
             </a>
+            {/* Library Access */}
             <a
               href="#"
               className="bg-white p-6 rounded-xl shadow-lg flex items-center gap-4 hover:bg-green-50 transition transform hover:scale-105"
@@ -337,6 +359,7 @@ const Home = () => {
                 </p>
               </div>
             </a>
+            {/* Articles & Videos */}
             <a
               href="#"
               className="bg-white p-6 rounded-xl shadow-lg flex items-center gap-4 hover:bg-green-50 transition transform hover:scale-105"
@@ -395,8 +418,7 @@ const Home = () => {
             >
               <img
                 src="/telegram.svg"
-                alt="Telegram"
-                className="h-7 w-7  transition-transform duration-200 hover:scale-110"
+                alt="Telegram" className="h-7 w-7  transition-transform duration-200 hover:scale-110"
               />
             </a>
             <a href="https://facebook.com" className="hover:text-blue-400">
