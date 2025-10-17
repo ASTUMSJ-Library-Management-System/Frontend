@@ -1,7 +1,7 @@
 import React from "react";
 import { NavLink } from "react-router-dom";
 import { cn } from "@/lib/utils";
-import Button from "@/components/ui/Button.jsx";
+import { Button } from "@/components/ui/Button.jsx";
 import { Book, LayoutDashboard, Users } from "lucide-react";
 
 const navItems = [
@@ -19,13 +19,13 @@ export function Sidebar({ className }) {
             Admin Panel
           </h2>
           <div className="space-y-1">
-            {navItems.map((item) => (
+            {/* {navItems.map((item) => (
               <NavLink
                 key={item.href}
                 to={item.href}
                 className={({ isActive }) =>
                   cn(
-                    "flex items-center rounded-md px-3 py-2 text-sm font-medium",
+                    "w-full justify-start flex items-center rounded-md px-3 py-2 text-sm font-medium",
                     isActive
                       ? "bg-primary text-primary-foreground"
                       : "hover:bg-accent hover:text-accent-foreground"
@@ -35,7 +35,11 @@ export function Sidebar({ className }) {
                 <item.icon className="mr-2 h-4 w-4" />
                 {item.label}
               </NavLink>
-            ))}
+            ))} */}
+            <Button variant="ghost" className="w-full justify-start">
+              <LayoutDashboard className="mr-2 h-4 w-4" />
+              Dashboard
+            </Button>
           </div>
         </div>
       </div>
