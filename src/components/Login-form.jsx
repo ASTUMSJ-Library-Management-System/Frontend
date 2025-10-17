@@ -3,16 +3,16 @@ import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/Button";
+import { Button } from "@/components/ui/Button.jsx";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/Card";
-import { Input } from "@/components/ui/Input";
-import { Label } from "@/components/ui/Label";
+} from "@/components/ui/Card.jsx";
+import { Input } from "@/components/ui/Input.jsx";
+import { Label } from "@/components/ui/Label.jsx";
 import { Eye, EyeOff } from "lucide-react"; // icons
 
 export function RegisterForm({ className, ...props }) {

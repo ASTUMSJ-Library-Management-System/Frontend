@@ -1,15 +1,15 @@
 import { useNavigate } from "react-router-dom";
 import React from "react";
 import { Facebook, Instagram, Menu } from "lucide-react";
-import { Sheet, SheetContent, SheetTrigger, SheetClose } from "@/components/ui/sheet.jsx";
-import { Button } from "@/components/ui/button.jsx";
+import { Sheet, SheetContent, SheetTrigger, SheetClose } from "@/components/ui/Sheet.jsx";
+import { Button } from "@/components/ui/Button.jsx";
 import {
   Carousel,
   CarouselContent,
   CarouselItem,
   CarouselNext,
   CarouselPrevious,
-} from "@/components/ui/carousel.jsx";
+} from "@/components/ui/Carousel.jsx";
 
 const sectors = [
   {

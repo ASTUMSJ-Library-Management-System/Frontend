@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/Card";
-import { Button } from "@/components/ui/Button";
+import { Button } from "@/components/ui/Button.jsx";
 import { X } from "lucide-react";
 import AppLayout from "../components/AppLayout";
 import { useAuth } from "@/hooks/useAuth";

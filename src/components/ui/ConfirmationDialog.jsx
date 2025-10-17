@@ -9,8 +9,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "@/components/ui/alert-dialog.jsx";
-import { Button } from "@/components/ui/button.jsx";
+} from "@/components/ui/Alert-dialog.jsx";
+import { Button } from "@/components/ui/Button.jsx";
 
 /**
  * A reusable, responsive, and accessible confirmation dialog.
