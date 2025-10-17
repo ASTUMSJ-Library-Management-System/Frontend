@@ -1,5 +1,4 @@
 import * as React from "react";
-import { cn } from "@/lib/utils";
 
 // This is a placeholder to allow the build to succeed.
 // You should replace this with the actual component from shadcn/ui

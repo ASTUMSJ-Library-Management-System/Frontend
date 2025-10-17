@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import AppLayout from "../components/AppLayout";
+import AppLayout from "@/components/AppLayout.jsx";
 import { Eye, Plus, X, Search } from "lucide-react";
 import { studentBookAPI, borrowAPI } from "../lib/api";
 import { toast } from "sonner";
