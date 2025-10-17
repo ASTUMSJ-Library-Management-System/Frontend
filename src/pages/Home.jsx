@@ -1,6 +1,8 @@
 import { useNavigate } from "react-router-dom";
 import React, { useState, useEffect } from "react";
-import { ChevronLeft, ChevronRight, Facebook, Instagram } from "lucide-react";
+import { ChevronLeft, ChevronRight, Facebook, Instagram, Menu } from "lucide-react";
+import { Sheet, SheetContent, SheetTrigger, SheetClose } from "@/components/ui/sheet";
+import { Button } from "@/components/ui/Button";
 
 const sectors = [
   {
@@ -74,16 +76,19 @@ const Home = () => {
 
         <div className="absolute inset-0  opacity-60 z-10"></div>
 
-        <nav className="fixed top-0 left-0 right-0 p-6 flex justify-between rounded-3xl mt-4 mr-3 ml-3 items-center z-50 bg-[#006045] shadow-lg">
+        <nav className="fixed top-0 left-0 right-0 p-4 md:p-6 flex justify-between rounded-3xl mt-4 mx-3 items-center z-50 bg-[#006045] shadow-lg">
+          {/* Logo and Brand Name */}
           <div className="flex items-center gap-3">
             <img src="/Frame.png" alt="ASTUMSJ Logo" className="h-10 w-10" />
             <span className="text-xl font-bold text-white">ASTUMSJ</span>
           </div>
-          <div className="hidden md:flex items-center gap-6 text-white">
+
+          {/* Desktop Navigation */}
+          <div className="hidden md:flex items-center gap-8 text-white">
             <a href="#about" className="hover:text-green-200 transition">
               About
             </a>
-            <a href="#Sector" className="hover:text-green-200 transition">
+            <a href="#sectors" className="hover:text-green-200 transition">
               Sector
             </a>
             <a href="#resources" className="hover:text-green-200 transition">
@@ -93,13 +98,40 @@ const Home = () => {
               Contact
             </a>
           </div>
-          <div className="flex items-center gap-4">
-            <button className="bg-white text-[#006045] font-semibold py-2 px-4 rounded-lg hover:bg-gray-100 transition">
+          <div className="hidden md:flex items-center gap-4">
+            <Button variant="secondary" onClick={() => navigate("/login")}>
               Log In
-            </button>
-            <button className="bg-[#A4F4CF] text-[#006045] font-semibold py-2 px-4 rounded-lg hover:bg-[#85E2B6] transition">
+            </Button>
+            <Button className="bg-[#A4F4CF] text-[#006045] hover:bg-[#85E2B6]" onClick={() => navigate("/register")}>
               Sign Up
-            </button>
+            </Button>
+          </div>
+
+          {/* Mobile Navigation (Hamburger Menu) */}
+          <div className="md:hidden">
+            <Sheet>
+              <SheetTrigger asChild>
+                <Button variant="outline" size="icon" className="bg-transparent text-white border-white hover:bg-white/20">
+                  <Menu className="h-6 w-6" />
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="right" className="w-[250px] bg-[#006045] text-white border-l-0">
+                <div className="flex flex-col space-y-6 pt-10">
+                  <SheetClose asChild><a href="#about" className="text-lg">About</a></SheetClose>
+                  <SheetClose asChild><a href="#sectors" className="text-lg">Sector</a></SheetClose>
+                  <SheetClose asChild><a href="#resources" className="text-lg">Resources</a></SheetClose>
+                  <SheetClose asChild><a href="#contact" className="text-lg">Contact</a></SheetClose>
+                  <div className="pt-6 flex flex-col space-y-4">
+                    <SheetClose asChild>
+                      <Button variant="secondary" onClick={() => navigate("/login")}>Log In</Button>
+                    </SheetClose>
+                    <SheetClose asChild>
+                      <Button className="bg-[#A4F4CF] text-[#006045] hover:bg-[#85E2B6]" onClick={() => navigate("/register")}>Sign Up</Button>
+                    </SheetClose>
+                  </div>
+                </div>
+              </SheetContent>
+            </Sheet>
           </div>
         </nav>
 
@@ -196,7 +228,7 @@ const Home = () => {
           </div>
         </section>
 
-        <section id="Sector" className="bg-[#ECFDF5] py-16 md:py-24 font-inter">
+        <section id="sectors" className="bg-[#ECFDF5] py-16 md:py-24 font-inter">
           <div className="container mx-auto px-4 md:px-8 max-w-7xl">
             <h2 className="text-3xl md:text-4xl font-bold text-[#006045] text-center mb-12">
               Sectors
@@ -378,7 +410,7 @@ const Home = () => {
             <a href="#about" className="hover:text-green-200 transition">
               About Us
             </a>
-            <a href="#Sector" className="hover:text-green-200 transition">
+            <a href="#sectors" className="hover:text-green-200 transition">
               Sector
             </a>
             <a href="#resources" className="hover:text-green-200 transition">
