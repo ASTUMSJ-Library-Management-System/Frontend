@@ -1,8 +1,15 @@
 import { useNavigate } from "react-router-dom";
 import React, { useState, useEffect } from "react";
-import { ChevronLeft, ChevronRight, Facebook, Instagram, Menu } from "lucide-react";
-import { Sheet, SheetContent, SheetTrigger, SheetClose } from "@/components/ui/sheet";
+import { Facebook, Instagram, Menu } from "lucide-react";
+import { Sheet, SheetContent, SheetTrigger, SheetClose } from "@/components/ui/sheet.jsx";
 import { Button } from "@/components/ui/Button";
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from "@/components/ui/carousel";
 
 const sectors = [
   {
@@ -44,18 +51,6 @@ const sectors = [
 
 const Home = () => {
   const navigate = useNavigate();
-
-  const [activeIndex, setActiveIndex] = useState(0);
-
-  const handleNext = () => {
-    setActiveIndex((current) => (current + 1) % sectors.length);
-  };
-
-  const handlePrev = () => {
-    setActiveIndex(
-      (current) => (current - 1 + sectors.length) % sectors.length
-    );
-  };
 
   return (
     <div className="bg-gray-50 font-inter ">
@@ -233,74 +228,48 @@ const Home = () => {
             <h2 className="text-3xl md:text-4xl font-bold text-[#006045] text-center mb-12">
               Sectors
             </h2>
-            <div className="relative">
-              <div className="overflow-hidden">
-                <div
-                  className="flex transition-transform duration-500 ease-in-out gap-6"
-                  style={{ transform: `translateX(-${activeIndex * 100}%)` }}
-                >
+            <Carousel
+              opts={{
+                align: "start",
+                loop: true,
+              }}
+              className="w-full max-w-xs sm:max-w-xl md:max-w-2xl lg:max-w-4xl xl:max-w-6xl mx-auto"
+            >
+              <CarouselContent className="-ml-4">
                   {sectors.map((sector, index) => (
-                    <div
+                  <CarouselItem
                       key={index}
-                      className="flex-shrink-0 w-full md:w-80 bg-white rounded-xl card-shadow overflow-hidden transition transform hover:scale-105"
+                    className="pl-4 md:basis-1/2 lg:basis-1/3"
                     >
-                      <img
-                        src={sector.image}
-                        alt={sector.title}
-                        className="w-full h-44 object-cover"
-                      />
-                      <div className="p-6">
-                        <h3 className="text-xl font-semibold text-[#006045] mb-2">
-                          {sector.title}
-                        </h3>
-                        <p className="text-sm text-gray-600 mb-4">
-                          {sector.time}
-                        </p>
-                        <p className="text-gray-700 text-sm mb-4">
-                          {sector.description}
-                        </p>
-                        <a
-                          href="#"
-                          className="inline-block bg-[#A4F4CF] text-[#006045] font-semibold py-2 px-4 rounded-lg hover:bg-[#85E2B6] transition text-sm"
-                        >
-                          Learn More
-                        </a>
+                    <div className="p-1">
+                      <div className="bg-white rounded-xl shadow-md overflow-hidden transition transform hover:scale-105 h-full flex flex-col">
+                        <img
+                          src={sector.image}
+                          alt={sector.title}
+                          className="w-full h-44 object-cover"
+                        />
+                        <div className="p-6 flex flex-col flex-grow">
+                          <h3 className="text-xl font-semibold text-[#006045] mb-2">
+                            {sector.title}
+                          </h3>
+                          <p className="text-sm text-gray-600 mb-4">
+                            {sector.time}
+                          </p>
+                          <p className="text-gray-700 text-sm mb-4 flex-grow">
+                            {sector.description}
+                          </p>
+                          <a href="#" className="mt-auto inline-block bg-[#A4F4CF] text-[#006045] font-semibold py-2 px-4 rounded-lg hover:bg-[#85E2B6] transition text-sm text-center">
+                            Learn More
+                          </a>
+                        </div>
                       </div>
                     </div>
+                  </CarouselItem>
                   ))}
-                </div>
-              </div>
-
-              <button
-                onClick={handlePrev}
-                className="absolute left-0 top-1/2 -translate-y-1/2 bg-white/50 hover:bg-white p-2 rounded-full shadow-lg transition-all duration-300 transform -translate-x-1/2 focus:outline-none focus:ring-2 focus:ring-[#006045]"
-                aria-label="Previous slide"
-              >
-                <ChevronLeft className="h-6 w-6 text-[#006045]" />
-              </button>
-              <button
-                onClick={handleNext}
-                className="absolute right-0 top-1/2 -translate-y-1/2 bg-white/50 hover:bg-white p-2 rounded-full shadow-lg transition-all duration-300 transform translate-x-1/2 focus:outline-none focus:ring-2 focus:ring-[#006045]"
-                aria-label="Next slide"
-              >
-                <ChevronRight className="h-6 w-6 text-[#006045]" />
-              </button>
-
-              <div className="flex justify-center mt-6 gap-2">
-                {sectors.map((_, index) => (
-                  <button
-                    key={index}
-                    onClick={() => setActiveIndex(index)}
-                    className={`h-2 rounded-full transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-[#006045] ${
-                      index === activeIndex
-                        ? "bg-[#006045] w-6"
-                        : "bg-gray-300 w-2"
-                    }`}
-                    aria-label={`Go to slide ${index + 1}`}
-                  ></button>
-                ))}
-              </div>
-            </div>
+              </CarouselContent>
+              <CarouselPrevious className="hidden md:inline-flex" />
+              <CarouselNext className="hidden md:inline-flex" />
+            </Carousel>
           </div>
         </section>
 
