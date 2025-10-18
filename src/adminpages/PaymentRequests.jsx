@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/Card";
-import Button from "@/components/ui/Button.jsx";
+import { Button } from "@/components/ui/Button.jsx";
 import AppLayout from "../components/AppLayout";
 import PaymentReviewModal from "../components/PaymentReviewModal";
 import { paymentAPI } from "../lib/api";
