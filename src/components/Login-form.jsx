@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/Button.jsx";
+import Button from "@/components/ui/Button.jsx";
 import {
   Card,
   CardContent,
