@@ -23,17 +23,14 @@ export function Sidebar({ className }) {
               <NavLink
                 key={item.href}
                 to={item.href}
-                className={({ isActive }) =>
-                  cn("w-full", !isActive && "hover:bg-accent hover:text-accent-foreground")
-                }
               >
-                {({ isActive }) => ( // This is the correct way to use the render prop
+                {({ isActive }) => (
                   <Button
                     variant={isActive ? "secondary" : "ghost"}
                     className="w-full justify-start"
                   >
                     <item.icon className="mr-2 h-4 w-4" />
-                    <span>{item.label}</span>
+                    {item.label}
                   </Button>
                 )}
               </NavLink>
