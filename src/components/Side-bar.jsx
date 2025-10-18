@@ -1,38 +1,42 @@
 import React from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 import {
-  X,
   Home,
   BookOpen,
   Library,
   CreditCard,
   Award,
   User,
-  LogOut,
 } from "lucide-react";
-import Button from "@/components/ui/Button.jsx";
+import { Button } from "@/components/ui/Button.jsx";
 import { useAuth } from "@/hooks/useAuth";
-import Achievements from "@/pages/Achievements";
+import { cn } from "@/lib/utils";
 
-function SideNavLink({ to, icon: IconComp, label, onClick }) {
-  const { pathname } = useLocation();
-  const active = pathname.toLowerCase() === to.toLowerCase();
-
+function SideNavLink({ to, icon: IconComp, label, onClick, end = false }) {
   return (
-    <Link
+    <NavLink
       to={to}
       onClick={onClick}
-      className={`flex items-center gap-2 px-3 py-2 rounded-md transition ${
-        active ? "bg-[#009966] text-white" : "text-gray-700 hover:bg-green-100"
-      }`}
+      end={end}
+      className={({ isActive }) =>
+        cn(
+          "flex items-center gap-2 px-3 py-2 rounded-md transition text-sm font-medium",
+          isActive
+            ? "bg-[#009966] text-white"
+            : "text-gray-700 hover:bg-green-100"
+        )
+      }
     >
       {IconComp && (
         <IconComp
-          className={`h-4 w-4 ${active ? "text-white" : "text-[#009966]"}`}
+          className={cn(
+            "h-4 w-4",
+            "group-hover:text-white"
+          )}
         />
       )}
-      <span className="text-sm font-medium">{label}</span>
-    </Link>
+      <span>{label}</span>
+    </NavLink>
   );
 }
 
@@ -46,7 +50,7 @@ export default function Sidebar({ isOpen = false, onClose = () => {} }) {
   };
 
   const studentLinks = [
-    { to: "/dashboard", label: "Dashboard", icon: Home },
+    { to: "/dashboard", label: "Dashboard", icon: Home, end: true },
     { to: "/browsebooks", label: "Browse Books", icon: BookOpen },
     { to: "/mybooks", label: "My Books", icon: Library },
     { to: "/membershippayment", label: "Membership Payment", icon: CreditCard },
@@ -55,7 +59,7 @@ export default function Sidebar({ isOpen = false, onClose = () => {} }) {
   ];
 
   const adminLinks = [
-    { to: "/admin/dashboard", label: "Dashboard", icon: Home },
+    { to: "/admin/dashboard", label: "Dashboard", icon: Home, end: true },
     { to: "/admin/managebooks", label: "Manage Books", icon: BookOpen },
     { to: "/admin/manageusers", label: "Manage Users", icon: User },
     {
@@ -68,8 +72,8 @@ export default function Sidebar({ isOpen = false, onClose = () => {} }) {
 
   const links = user?.role === "admin" ? adminLinks : studentLinks;
 
-  const SidebarBody = ({ onItemClick }) => (
-    <div className="h-screen w-64 bg-[#FFFFFF] border-r shadow-sm border border-gray-200 flex flex-col justify-between p-4">
+  return (
+    <div className="h-full bg-[#FFFFFF] border-r shadow-sm border-gray-200 flex flex-col justify-between p-4">
       <div>
         <div className="flex items-center gap-3 mb-3 shadow-[0_1px_20px_0_#1D77571A] rounded-lg p-2">
           <div className="h-10 w-10 flex items-center justify-center rounded-lg bg-[#009966] shadow-sm">
@@ -89,7 +93,7 @@ export default function Sidebar({ isOpen = false, onClose = () => {} }) {
 
         <nav className="flex flex-col gap-2 mt-3">
           {links.map((l) => (
-            <SideNavLink key={l.to} {...l} onClick={onItemClick} />
+            <SideNavLink key={l.to} {...l} onClick={onClose} />
           ))}
         </nav>
       </div>
@@ -116,31 +120,5 @@ export default function Sidebar({ isOpen = false, onClose = () => {} }) {
         </Button>
       </div>
     </div>
-  );
-
-  return (
-    <>
-      <div className="hidden md:block shadow-sm border border-gray-200 fixed left-0 top-0 h-screen w-64 z-40">
-        <SidebarBody />
-      </div>
-
-      {isOpen && (
-        <div className="md:hidden fixed inset-0 z-50">
-          <div className="absolute inset-0 bg-black/40" onClick={onClose} />
-          <div className="relative h-full">
-            <button
-              className="absolute top-3 right-3 z-50 p-2 bg-white/90 rounded-md shadow"
-              onClick={onClose}
-              aria-label="Close menu"
-            >
-              <X className="w-5 h-5 text-gray-700" />
-            </button>
-            <div className="h-full w-64 bg-white shadow-lg">
-              <SidebarBody onItemClick={onClose} />
-            </div>
-          </div>
-        </div>
-      )}
-    </>
   );
 }

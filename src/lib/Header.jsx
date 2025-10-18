@@ -1,8 +1,8 @@
 import React from "react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/Sheet.jsx";
-import Button from "@/components/ui/Button.jsx";
+import { Button } from "@/components/ui/Button.jsx";
 import { Menu } from "lucide-react";
-import { Sidebar } from "./Sidebar";
+import Sidebar from "@/components/Side-bar.jsx";
 import { UserNav } from "@/components/UserNav";
 
 export function Header() {
