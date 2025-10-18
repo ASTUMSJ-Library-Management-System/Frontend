@@ -8,7 +8,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/DropdownMenu.jsx";
-import Button from "@/components/ui/Button.jsx";
+import { Button } from "@/components/ui/Button.jsx";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/Avatar.jsx";
 import { LogOut, User } from "lucide-react";
 

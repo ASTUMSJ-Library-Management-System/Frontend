@@ -8,7 +8,7 @@ import {
   Award,
   User,
 } from "lucide-react";
-import Button from "@/components/ui/Button.jsx";
+import { Button } from "@/components/ui/Button.jsx";
 import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
 
