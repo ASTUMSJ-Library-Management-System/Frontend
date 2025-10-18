@@ -1,6 +1,6 @@
 import React from "react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/Sheet.jsx";
-import { Button } from "@/components/ui/Button.jsx";
+import Button from "@/components/ui/Button.jsx";
 import { Menu } from "lucide-react";
 import { Sidebar } from "./Sidebar";
 import { UserNav } from "@/components/UserNav";
