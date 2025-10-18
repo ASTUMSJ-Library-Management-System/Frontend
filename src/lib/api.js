@@ -1,8 +1,11 @@
 import axios from "axios";
 
+// Use an environment variable for the API base URL.
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "https://backend-m3la.onrender.com/api";
+
 // Create axios instance
 export const api = axios.create({
-  baseURL: "https://backend-m3la.onrender.com/api", // Adjust this to match your backend URL
+  baseURL: API_BASE_URL,
   headers: {
     "Content-Type": "application/json",
   },
@@ -10,7 +13,7 @@ export const api = axios.create({
 
 // Create separate axios instance for FormData requests
 const apiFormData = axios.create({
-  baseURL: "https://backend-m3la.onrender.com/api",
+  baseURL: API_BASE_URL,
   // No default Content-Type header - let browser set it for FormData
 });
 
@@ -39,6 +42,26 @@ api.interceptors.response.use(
   }
 );
 
+// ================= API HELPERS =================
+/**
+ * A centralized error handler for API calls.
+ * @param {Error} error - The error object from axios.
+ * @param {string} [context='operation'] - A string describing the context of the API call.
+ * @returns {Error} A new Error with a user-friendly message.
+ */
+const handleApiError = (error, context = 'operation') => {
+  if (error.response?.data?.message) {
+    return new Error(error.response.data.message);
+  }
+  if (error.code === 'ECONNREFUSED' || error.message.includes('Network Error')) {
+    return new Error('Cannot connect to the server. Please check your network connection and ensure the backend is running.');
+  }
+  if (error.response?.status) {
+    return new Error(`A server error occurred (status ${error.response.status}) during the ${context}.`);
+  }
+  return new Error(`An unexpected error occurred during the ${context}.`);
+};
+
 // ================= AUTH API =================
 export const authAPI = {
   login: async (credentials) => {
@@ -46,17 +69,7 @@ export const authAPI = {
       const response = await api.post("/auth/login", credentials);
       return response.data;
     } catch (error) {
-      if (error.response?.data?.message)
-        throw new Error(error.response.data.message);
-      else if (error.response?.status === 404)
-        throw new Error("Login endpoint not found. Please check the server.");
-      else if (error.response?.status === 500)
-        throw new Error("Server error. Please try again later.");
-      else if (error.code === "ECONNREFUSED")
-        throw new Error(
-          "Cannot connect to server. Please check if the backend is running."
-        );
-      else throw new Error("Network error. Please check your connection.");
+      throw handleApiError(error, 'login');
     }
   },
 
@@ -67,19 +80,7 @@ export const authAPI = {
       const response = await client.post("/auth/register", userData);
       return response.data;
     } catch (error) {
-      if (error.response?.data?.message)
-        throw new Error(error.response.data.message);
-      else if (error.response?.status === 404)
-        throw new Error(
-          "Registration endpoint not found. Please check the server."
-        );
-      else if (error.response?.status === 500)
-        throw new Error("Server error. Please try again later.");
-      else if (error.code === "ECONNREFUSED")
-        throw new Error(
-          "Cannot connect to server. Please check if the backend is running."
-        );
-      else throw new Error("Network error. Please check your connection.");
+      throw handleApiError(error, 'registration');
     }
   },
 
@@ -101,9 +102,7 @@ export const authAPI = {
       const response = await api.post("/auth/refresh-token", { refreshToken });
       return response.data;
     } catch (error) {
-      if (error.response?.data?.message)
-        throw new Error(error.response.data.message);
-      else throw new Error("Failed to refresh token.");
+      throw handleApiError(error, 'token refresh');
     }
   },
 };
@@ -115,9 +114,7 @@ export const userAPI = {
       const response = await api.get("/user/profile");
       return response.data;
     } catch (error) {
-      if (error.response?.data?.message)
-        throw new Error(error.response.data.message);
-      else throw new Error("Failed to fetch profile.");
+      throw handleApiError(error, 'fetching profile');
     }
   },
 
@@ -126,9 +123,7 @@ export const userAPI = {
       const response = await api.put("/user/profile", userData);
       return response.data;
     } catch (error) {
-      if (error.response?.data?.message)
-        throw new Error(error.response.data.message);
-      else throw new Error("Failed to update profile.");
+      throw handleApiError(error, 'updating profile');
     }
   },
 };
@@ -140,9 +135,7 @@ export const bookAPI = {
       const response = await api.get("/books");
       return response.data;
     } catch (error) {
-      if (error.response?.data?.message)
-        throw new Error(error.response.data.message);
-      else throw new Error("Failed to fetch books.");
+      throw handleApiError(error, 'fetching books');
     }
   },
 
@@ -157,9 +150,7 @@ export const bookAPI = {
       const response = await api.post("/books", bookData);
       return response.data;
     } catch (error) {
-      if (error.response?.data?.message)
-        throw new Error(error.response.data.message);
-      else throw new Error("Failed to add book.");
+      throw handleApiError(error, 'adding book');
     }
   },
 
@@ -174,9 +165,7 @@ export const bookAPI = {
       const response = await api.put(`/books/${id}`, bookData);
       return response.data;
     } catch (error) {
-      if (error.response?.data?.message)
-        throw new Error(error.response.data.message);
-      else throw new Error("Failed to update book.");
+      throw handleApiError(error, 'updating book');
     }
   },
 
@@ -185,9 +174,7 @@ export const bookAPI = {
       const response = await api.delete(`/books/${id}`);
       return response.data;
     } catch (error) {
-      if (error.response?.data?.message)
-        throw new Error(error.response.data.message);
-      else throw new Error("Failed to delete book.");
+      throw handleApiError(error, 'deleting book');
     }
   },
 };
@@ -207,15 +194,7 @@ export const paymentAPI = {
         error.response?.data,
         error
       );
-      if (error.response?.status === 404)
-        throw new Error(
-          "Payments endpoint not found. Please check if the backend route is configured."
-        );
-      if (error.response?.status === 401)
-        throw new Error("Authentication failed. Please log in again.");
-      if (error.response?.data?.message)
-        throw new Error(error.response.data.message);
-      else throw new Error("Failed to fetch payments.");
+      throw handleApiError(error, 'fetching payments');
     }
   },
 
@@ -232,12 +211,7 @@ export const paymentAPI = {
         error.response?.data,
         error
       );
-      if (error.response?.status === 404) throw new Error("Payment not found.");
-      if (error.response?.status === 401)
-        throw new Error("Authentication failed. Please log in again.");
-      if (error.response?.data?.message)
-        throw new Error(error.response.data.message);
-      else throw new Error("Failed to update payment status.");
+      throw handleApiError(error, 'updating payment status');
     }
   },
 };
@@ -254,13 +228,7 @@ export const borrowAPI = {
         error.response?.status,
         error.response?.data
       );
-      if (error.response?.status === 404)
-        throw new Error(
-          "Borrows endpoint not found. You need to add a GET route in your backend."
-        );
-      if (error.response?.data?.message)
-        throw new Error(error.response.data.message);
-      else throw new Error("Failed to fetch borrow records.");
+      throw handleApiError(error, 'fetching borrow records');
     }
   },
 
@@ -274,13 +242,7 @@ export const borrowAPI = {
         error.response?.status,
         error.response?.data
       );
-      if (error.response?.status === 404)
-        throw new Error(
-          "Return request endpoint not found. Please check if the backend route is configured."
-        );
-      if (error.response?.data?.message)
-        throw new Error(error.response.data.message);
-      else throw new Error("Failed to request return.");
+      throw handleApiError(error, 'requesting return');
     }
   },
 
@@ -289,9 +251,7 @@ export const borrowAPI = {
       const response = await api.put(`/borrow/return/${borrowId}/approve`);
       return response.data;
     } catch (error) {
-      if (error.response?.data?.message)
-        throw new Error(error.response.data.message);
-      else throw new Error("Failed to approve return.");
+      throw handleApiError(error, 'approving return');
     }
   },
 
@@ -300,9 +260,7 @@ export const borrowAPI = {
       const response = await api.put(`/borrow/return/${borrowId}/decline`);
       return response.data;
     } catch (error) {
-      if (error.response?.data?.message)
-        throw new Error(error.response.data.message);
-      else throw new Error("Failed to decline return.");
+      throw handleApiError(error, 'declining return');
     }
   },
 
@@ -316,13 +274,7 @@ export const borrowAPI = {
         error.response?.status,
         error.response?.data
       );
-      if (error.response?.status === 404)
-        throw new Error(
-          "Mark as returned endpoint not found. Please check your backend route."
-        );
-      if (error.response?.data?.message)
-        throw new Error(error.response.data.message);
-      else throw new Error("Failed to mark as returned.");
+      throw handleApiError(error, 'marking book as returned');
     }
   },
 
@@ -331,9 +283,7 @@ export const borrowAPI = {
       const response = await api.get("/borrow/myBorrows");
       return response.data;
     } catch (error) {
-      if (error.response?.data?.message)
-        throw new Error(error.response.data.message);
-      else throw new Error("Failed to fetch your borrows.");
+      throw handleApiError(error, 'fetching your borrows');
     }
   },
 
@@ -342,9 +292,7 @@ export const borrowAPI = {
       const response = await api.post(`/borrow/${bookId}`);
       return response.data;
     } catch (error) {
-      if (error.response?.data?.message)
-        throw new Error(error.response.data.message);
-      else throw new Error("Failed to borrow book.");
+      throw handleApiError(error, 'borrowing book');
     }
   },
 };
@@ -356,9 +304,7 @@ export const studentBookAPI = {
       const response = await api.get("/books");
       return response.data;
     } catch (error) {
-      if (error.response?.data?.message)
-        throw new Error(error.response.data.message);
-      else throw new Error("Failed to fetch books.");
+      throw handleApiError(error, 'fetching books');
     }
   },
 };
@@ -372,9 +318,7 @@ export const studentPaymentAPI = {
       });
       return response.data;
     } catch (error) {
-      if (error.response?.data?.message)
-        throw new Error(error.response.data.message);
-      else throw new Error("Failed to submit payment.");
+      throw handleApiError(error, 'submitting payment');
     }
   },
 
@@ -383,9 +327,7 @@ export const studentPaymentAPI = {
       const response = await api.get("/payments/myPayments");
       return response.data;
     } catch (error) {
-      if (error.response?.data?.message)
-        throw new Error(error.response.data.message);
-      else throw new Error("Failed to fetch payment history.");
+      throw handleApiError(error, 'fetching payment history');
     }
   },
 
@@ -394,9 +336,7 @@ export const studentPaymentAPI = {
       const response = await api.get("/payments/isPaid");
       return response.data;
     } catch (error) {
-      if (error.response?.data?.message)
-        throw new Error(error.response.data.message);
-      else throw new Error("Failed to check payment status.");
+      throw handleApiError(error, 'checking payment status');
     }
   },
 };
@@ -413,9 +353,7 @@ export const reviewAPI = {
       });
       return response.data;
     } catch (error) {
-      if (error.response?.data?.message)
-        throw new Error(error.response.data.message);
-      else throw new Error("Failed to save review.");
+      throw handleApiError(error, 'saving review');
     }
   },
 
@@ -427,9 +365,7 @@ export const reviewAPI = {
       });
       return response.data;
     } catch (error) {
-      if (error.response?.data?.message)
-        throw new Error(error.response.data.message);
-      else throw new Error("Failed to fetch book reviews.");
+      throw handleApiError(error, 'fetching book reviews');
     }
   },
 
@@ -442,9 +378,7 @@ export const reviewAPI = {
       if (error.response?.status === 404) {
         return null; // User hasn't reviewed this book yet
       }
-      if (error.response?.data?.message)
-        throw new Error(error.response.data.message);
-      else throw new Error("Failed to fetch user review.");
+      throw handleApiError(error, 'fetching user review');
     }
   },
 
@@ -456,9 +390,7 @@ export const reviewAPI = {
       });
       return response.data;
     } catch (error) {
-      if (error.response?.data?.message)
-        throw new Error(error.response.data.message);
-      else throw new Error("Failed to fetch user reviews.");
+      throw handleApiError(error, 'fetching your reviews');
     }
   },
 
@@ -468,9 +400,7 @@ export const reviewAPI = {
       const response = await api.get(`/reviews/book/${bookId}/stats`);
       return response.data;
     } catch (error) {
-      if (error.response?.data?.message)
-        throw new Error(error.response.data.message);
-      else throw new Error("Failed to fetch review statistics.");
+      throw handleApiError(error, 'fetching review statistics');
     }
   },
 
@@ -483,9 +413,7 @@ export const reviewAPI = {
       });
       return response.data;
     } catch (error) {
-      if (error.response?.data?.message)
-        throw new Error(error.response.data.message);
-      else throw new Error("Failed to update review.");
+      throw handleApiError(error, 'updating review');
     }
   },
 
@@ -495,9 +423,7 @@ export const reviewAPI = {
       const response = await api.delete(`/reviews/${reviewId}`);
       return response.data;
     } catch (error) {
-      if (error.response?.data?.message)
-        throw new Error(error.response.data.message);
-      else throw new Error("Failed to delete review.");
+      throw handleApiError(error, 'deleting review');
     }
   },
 };
